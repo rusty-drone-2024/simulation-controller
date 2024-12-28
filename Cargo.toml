@@ -4,8 +4,7 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
-wg_2024 = { git = "https://github.com/ZGako/WGL_repo_2024/", branch = "trait-object-compatibility", features = ["serialize"]}
-network_initializer = { git = "https://github.com/rusty-drone-2024/network-initializer" }
+wg_2024 = { git = "https://github.com/ZGako/WGL_repo_2024/", branch = "trait-object-compatibility"}
+common_structs = { git = "https://github.com/rusty-drone-2024/common-structs.git" }
 
 crossbeam-channel = ">=0.5.13"
-toml = "0.8.19"
