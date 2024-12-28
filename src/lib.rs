@@ -13,7 +13,6 @@ impl RustySC {
 }
 
 impl RustySC {
-    
     fn run(&self) {
         println!("Running simulation controller");
     }
