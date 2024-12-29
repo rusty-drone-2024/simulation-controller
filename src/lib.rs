@@ -1,9 +1,9 @@
+mod ui;
 
+use bevy::prelude::*;
 use common_structs::network::{Network, TypeInfo};
-use wg_2024::{
-    controller::DroneCommand,
-    network::NodeId,
-};
+use wg_2024::network::NodeId;
+
 
 #[allow(dead_code)]
 pub struct RustySC {
@@ -19,19 +19,21 @@ impl RustySC {
 
 impl RustySC {
     fn run(&self) {
-        println!("Running simulation controller");
+        println!("Simulation controller started...");
+        App::new()
+            .run();
     }
 
     pub fn remove_sender (&mut self, nghb_id: NodeId, id: NodeId) -> Result<(), ()> {
         let node = self.network.topology.get(&id).unwrap();
         match node.type_info {
             TypeInfo::Drone(ref drone_info) => {
-                let _ = drone_info.command_send_channel.send(DroneCommand::RemoveSender(nghb_id));
+                let _ = drone_info.command_send_channel.send(wg_2024::controller::DroneCommand::RemoveSender(id));
                 self.network.topology.get_mut(&id).unwrap().neighbours.remove(&nghb_id);
                 self.network.topology.get_mut(&nghb_id).unwrap().neighbours.remove(&id);
                 Ok(())
             }
-            _ => Err(()),
+            _ => Err(())
         }
     }
 
@@ -40,12 +42,12 @@ impl RustySC {
         let sender = self.network.simulation_channels.leaf_event_sender.clone();
         match &node.type_info {
             TypeInfo::Drone(ref drone_info) => {
-                let _ = drone_info.command_send_channel.send(DroneCommand::AddSender(nghb_id, sender));
+                let _ = drone_info.command_send_channel.send(wg_2024::controller::DroneCommand::AddSender(nghb_id, sender));
                 self.network.topology.get_mut(&id).unwrap().neighbours.insert(nghb_id);
                 self.network.topology.get_mut(&nghb_id).unwrap().neighbours.insert(id);
                 Ok(())
             }
-            _ => Err(()),
+            _ => Err(())
         }
     }
 
@@ -53,10 +55,10 @@ impl RustySC {
         let node = self.network.topology.get(&id).unwrap();
         match &node.type_info {
             TypeInfo::Drone(ref drone_info) => {
-                let _ = drone_info.command_send_channel.send(DroneCommand::SetPacketDropRate(pdr));
+                let _ = drone_info.command_send_channel.send(wg_2024::controller::DroneCommand::SetPacketDropRate(pdr));
                 Ok(())
             }
-            _ => Err(()),
+            _ => Err(())
         }
     }
 
@@ -64,7 +66,7 @@ impl RustySC {
         let node = self.network.topology.get(&id).unwrap();
         match &node.type_info {
             TypeInfo::Drone(ref drone_info) => {
-                let _ = drone_info.command_send_channel.send(DroneCommand::Crash);
+                let _ = drone_info.command_send_channel.send(wg_2024::controller::DroneCommand::Crash);
                 
                 let neighbours = node.neighbours.clone();
                 self.network.topology.remove(&id);
@@ -74,7 +76,7 @@ impl RustySC {
                 
                 Ok(())
             }
-            _ => Err(()),
+            _ => Err(())
         }
     }
 }
