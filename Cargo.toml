@@ -6,6 +6,10 @@ edition = "2021"
 [dependencies]
 wg_2024 = { git = "https://github.com/WGL-2024/WGL_repo_2024.git", features = ["serialize"]}
 common_structs = { git = "https://github.com/rusty-drone-2024/common-structs.git" }
+network_initializer ={ git = "https://github.com/rusty-drone-2024/network-initializer.git" }
 
 crossbeam-channel = ">=0.5.13"
-bevy = "0.15.0"
+bevy = "0.15.1"
+
+[profile.dev]
+opt-level = 1
