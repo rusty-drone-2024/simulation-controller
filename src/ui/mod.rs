@@ -1,2 +1,3 @@
+pub mod components;
 pub mod spawn;
-pub mod structs;
+pub mod camera;
