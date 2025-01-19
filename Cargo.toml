@@ -12,6 +12,7 @@ crossbeam-channel = ">=0.5.13"
 bevy = "0.15.1"
 rand = "0.8.4"
 force_graph = "0.3.2"
+petgraph = "0.5.1"
 
 [profile.dev]
 opt-level = 1

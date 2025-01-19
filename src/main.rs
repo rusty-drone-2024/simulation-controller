@@ -2,8 +2,8 @@ use bevy::prelude::*;
 
 mod ui;
 
-use ui::spawn::SpawnTopology;
 use ui::camera::CameraPlugin;
+use ui::spawn_topology::SpawnTopologyPlugin;
 
 fn main() {
     App::new()
@@ -14,6 +14,6 @@ fn main() {
         })
         .add_plugins(DefaultPlugins)
         .add_plugins(CameraPlugin)
-        .add_plugins(SpawnTopology)
+        .add_plugins(SpawnTopologyPlugin)
         .run();
 }

@@ -35,19 +35,23 @@ pub enum LeafType {
     Server,
 }
 
+#[derive(Component)]
+pub struct Edge {
+    pub start_node: NodeId,
+    pub end_node: NodeId,
+}
+
 #[derive(Bundle)]
 pub struct LeafBundle {
     pub node: Node,
     pub leaf: Leaf,
     pub leaf_type: LeafType,
-    pub model: SceneRoot,
 }
 
 #[derive(Bundle)]
 pub struct DroneBundle {
     pub node: Node,
     pub drone: Drone,
-    pub model: SceneRoot,
 }
 
 #[allow(unused)]
