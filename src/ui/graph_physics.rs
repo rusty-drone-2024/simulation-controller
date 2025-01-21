@@ -1,10 +1,10 @@
 use bevy::prelude::*;
 
 use super::components::Node;
-use wg_2024::network::NodeId;
 use force_graph::{ForceGraph, NodeData};
 use petgraph::prelude::NodeIndex;
 use std::collections::HashMap;
+use wg_2024::network::NodeId;
 
 #[allow(unused)]
 #[derive(Resource)]
@@ -73,4 +73,3 @@ fn update_nodes_positions(graph: &mut ResMut<Graph>, mut query: Query<(&Node, &m
         transform.translation = Vec3::new(x, y, 0.0);
     }
 }
-

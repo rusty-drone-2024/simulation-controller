@@ -7,39 +7,6 @@ use wg_2024::{
     network::NodeId,
     packet::Packet,
 };
-#[allow(unused)]
-#[derive(Component)]
-pub struct Node {
-    pub id: NodeId,
-    pub neighbours: HashSet<NodeId>,
-    pub packet_channel: Sender<Packet>,
-}
-
-#[allow(unused)]
-#[derive(Component)]
-pub struct Drone {
-    pub pdr: f32,
-    pub command_channel: Sender<DroneCommand>,
-}
-
-#[allow(unused)]
-#[derive(Component)]
-pub struct Leaf {
-    pub command_channel: Sender<LeafCommand>,
-}
-
-#[allow(unused)]
-#[derive(Component)]
-pub enum LeafType {
-    Client,
-    Server,
-}
-
-#[derive(Component)]
-pub struct Edge {
-    pub start_node: NodeId,
-    pub end_node: NodeId,
-}
 
 #[derive(Bundle)]
 pub struct LeafBundle {
@@ -54,7 +21,37 @@ pub struct DroneBundle {
     pub drone: Drone,
 }
 
-#[allow(unused)]
+#[derive(Component)]
+pub struct Node {
+    pub id: NodeId,
+    pub entity_id: Entity,
+    pub neighbours: HashSet<NodeId>,
+    pub packet_channel: Sender<Packet>,
+}
+
+#[derive(Component)]
+pub struct Drone {
+    pub command_channel: Sender<DroneCommand>,
+    pub pdr: f32,
+}
+
+#[derive(Component)]
+pub struct Leaf {
+    pub command_channel: Sender<LeafCommand>,
+}
+
+#[derive(Component)]
+pub enum LeafType {
+    Client,
+    Server,
+}
+
+#[derive(Component)]
+pub struct Edge {
+    pub start_node: NodeId,
+    pub end_node: NodeId,
+}
+
 #[derive(Resource)]
 pub struct Listeners {
     pub drone_listener: Receiver<DroneEvent>,
