@@ -1,33 +1,93 @@
 use bevy::prelude::*;
-
-use super::components::Node;
-use force_graph::{ForceGraph, NodeData};
+use force_graph::{ForceGraph, NodeData, SimulationParameters};
 use petgraph::prelude::NodeIndex;
 use std::collections::HashMap;
+use std::time::{SystemTime, UNIX_EPOCH};
 use wg_2024::network::NodeId;
 
-#[allow(unused)]
+use super::components::Node;
+
+pub struct PhysicsPlugin;
+
+impl Plugin for PhysicsPlugin {
+    fn build(&self, app: &mut App) {
+        app.insert_resource(Graph::new()); // Initialize the graph as a resource
+        app.add_systems(Update, fill_graph);
+        app.add_systems(Update, update_graph_positions);
+        app.add_systems(Update, update_nodes_positions);
+    }
+}
+
+fn log_with_timestamp(message: &str) {
+    let now = SystemTime::now()
+        .duration_since(UNIX_EPOCH)
+        .unwrap_or_default()
+        .as_secs_f64();
+    info!("[{:.3}] {}", now, message);
+}
+
+fn fill_graph(query: Query<(&Node, &Transform), Added<Node>>, mut graph: ResMut<Graph>) {
+    log_with_timestamp("fill_graph system called");
+    for (node, transform) in query.iter() {
+        add_node_to_graph(
+            &mut graph,
+            node.id,
+            transform.translation.x,
+            transform.translation.y,
+        );
+        for &neighbor_id in &node.neighbours {
+            add_neighbor_to_graph(&mut graph, node.id, neighbor_id);
+        }
+    }
+}
+
+fn update_graph_positions(mut graph: ResMut<Graph>, time: Res<Time>) {
+    log_with_timestamp("update_graph_positions system called");
+    graph.force_graph.update(time.delta_secs());
+}
+
+fn update_nodes_positions(graph: Res<Graph>, mut query: Query<(&Node, &mut Transform)>) {
+    log_with_timestamp("update_nodes_positions system called");
+    const SHIFT: f32 = 200.0;
+    for (node, mut transform) in query.iter_mut() {
+        if let Some((x, y)) = get_coordinates(&graph, node.id) {
+            transform.translation = Vec3::new(x - SHIFT, y, 0.0);
+            println!("Values of x and y are: {}, {}", x, y);
+        }
+    }
+}
+
+fn get_coordinates(graph: &Graph, node_id: NodeId) -> Option<(f32, f32)> {
+    graph
+        .correlation
+        .get(&node_id)
+        .and_then(|node_index| graph.force_graph.get_graph().node_weight(*node_index))
+        .map(|node| (node.data.x, node.data.y))
+}
+
+//TODO MOVE ALL THE CODE BELOW TO ANOTHER FILE
 #[derive(Resource)]
 pub struct Graph {
     pub correlation: HashMap<NodeId, NodeIndex>,
     pub force_graph: ForceGraph<NodeData>,
 }
-#[allow(unused)]
+
 impl Graph {
     pub fn new() -> Self {
         Graph {
             correlation: HashMap::new(),
-            force_graph: ForceGraph::new(Default::default()),
+            force_graph: ForceGraph::new(SimulationParameters {
+                force_charge: 100.0,
+                force_spring: 0.05,
+                force_max: 10.0,
+                node_speed: 500.0,
+                damping_factor: 0.90,
+            }),
         }
     }
 }
-#[allow(unused)]
-fn initialize_graph(mut commands: Commands) {
-    commands.insert_resource(Graph::new());
-}
 
-#[allow(unused)]
-fn add_node_to_graph(mut graph: ResMut<Graph>, node_id: NodeId, x: f32, y: f32) {
+fn add_node_to_graph(graph: &mut ResMut<Graph>, node_id: NodeId, x: f32, y: f32) {
     if !graph.correlation.contains_key(&node_id) {
         let node_index = graph.force_graph.add_node(NodeData {
             x: x,
@@ -37,39 +97,20 @@ fn add_node_to_graph(mut graph: ResMut<Graph>, node_id: NodeId, x: f32, y: f32) 
         graph.correlation.insert(node_id, node_index);
     }
 }
-#[allow(unused)]
+
 fn delete_node_from_graph(mut graph: ResMut<Graph>, node_id: NodeId) {
     if let Some(node_index) = graph.correlation.remove(&node_id) {
         graph.force_graph.remove_node(node_index);
     }
 }
 
-#[allow(unused)]
-fn update_graph(graph: &mut ResMut<Graph>, time: Res<Time>) {
-    graph.force_graph.update(time.delta_secs());
-}
-
-#[allow(unused)]
-fn get_coordinates(graph: &Graph, node_id: NodeId) -> (f32, f32) {
-    let node_index: &NodeIndex = graph.correlation.get(&node_id).unwrap();
-    let node = &graph
-        .force_graph
-        .get_graph()
-        .node_weight(*node_index)
-        .unwrap()
-        .data;
-    (node.x, node.y)
-}
-
-#[allow(unused)]
-fn update_graph_positions(mut graph: ResMut<Graph>, time: Res<Time>) {
-    graph.force_graph.update(time.delta_secs());
-}
-
-#[allow(unused)]
-fn update_nodes_positions(graph: &mut ResMut<Graph>, mut query: Query<(&Node, &mut Transform)>) {
-    for (node, mut transform) in query.iter_mut() {
-        let (x, y) = get_coordinates(&graph, node.id);
-        transform.translation = Vec3::new(x, y, 0.0);
-    }
+fn add_neighbor_to_graph(graph: &mut ResMut<Graph>, node_id: NodeId, neighbor_id: NodeId) {
+    if let (Some(&node_index), Some(&neighbor_index)) = (
+        graph.correlation.get(&node_id),
+        graph.correlation.get(&neighbor_id),
+    ) {
+        graph
+            .force_graph
+            .add_edge(node_index, neighbor_index, Default::default());
+    };
 }
