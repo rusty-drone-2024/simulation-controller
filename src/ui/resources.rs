@@ -1,13 +1,12 @@
-use bevy::{prelude::*, winit::WinitSettings};
-pub struct InitResourcesPlugin;
+use bevy::prelude::*;
 
-impl Plugin for InitResourcesPlugin {
-    fn build(&self, app: &mut App) {
-        app.insert_resource(WinitSettings::desktop_app())
-            .insert_resource(ClearColor(Color::srgb(0.6, 0.6, 0.9)))
-            .insert_resource(AmbientLight {
-                color: Color::default(),
-                brightness: 750.0,
-            });
-    }
+use common_structs::leaf::LeafEvent;
+use crossbeam_channel::Receiver;
+use wg_2024::controller::DroneEvent;
+
+//Use to listen events from the network
+#[derive(Resource)]
+pub struct Listeners {
+    pub drone_listener: Receiver<DroneEvent>,
+    pub leaf_listener: Receiver<LeafEvent>,
 }
