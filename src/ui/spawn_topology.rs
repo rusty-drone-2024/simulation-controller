@@ -1,10 +1,12 @@
-use super::components::{Drone, DroneBundle, Edge, Leaf, LeafBundle, LeafType, Node};
+use super::components::{
+    Drone, DroneBundle, Edge, Leaf, LeafBundle, LeafType, Node, SelectionSpriteMarker,
+};
 use bevy::{color, prelude::*};
 use common_structs::network::TypeInfo;
 
 use network_initializer::initialize_default_network;
 
-use super::windows::{observer_drone, observer_leaf};
+use super::on_click::{observer_drone, observer_leaf};
 use rand::Rng;
 use std::collections::HashSet;
 use wg_2024::network::NodeId;
@@ -14,6 +16,7 @@ pub struct SpawnTopologyPlugin;
 impl Plugin for SpawnTopologyPlugin {
     fn build(&self, app: &mut App) {
         app.add_systems(Startup, initialize_sc)
+            .add_systems(Startup, initialize_items)
             .add_systems(Update, update_edges);
     }
 }
@@ -27,14 +30,14 @@ fn initialize_sc(
     let network = initialize_default_network("config.toml");
     let mut rng = rand::thread_rng();
 
-    let scale_factor = Vec3::new(1.0, 1.0, 1.0);
+    let scale_factor = Vec3::new(0.6, 0.6, 0.6);
     let mut connection_set: HashSet<(NodeId, NodeId)> = HashSet::new();
 
     for (node_id, node_info) in network.topology.iter() {
         match &node_info.type_info {
             TypeInfo::Drone(drone_info) => {
                 let random_position = Vec3::new(
-                    rng.gen_range(-200.0..200.0),
+                    rng.gen_range(-200.0..100.0),
                     rng.gen_range(-150.0..150.0),
                     0.0,
                 );
@@ -48,7 +51,7 @@ fn initialize_sc(
                                 entity_id: Entity::PLACEHOLDER,
                             },
                             drone: Drone {
-                                pdr: 1.0,
+                                pdr: drone_info.pdr,
                                 command_channel: drone_info.command_send_channel.clone(),
                             },
                         },
@@ -71,9 +74,9 @@ fn initialize_sc(
             TypeInfo::Client(leaf_info) => {
                 let random_position = Vec3::new(
                     if rng.gen_bool(0.5) {
-                        rng.gen_range(-600.0..-200.0)
+                        rng.gen_range(-400.0..-200.0)
                     } else {
-                        rng.gen_range(200.0..600.0)
+                        rng.gen_range(0.0..400.0)
                     },
                     if rng.gen_bool(0.5) {
                         rng.gen_range(-400.0..-200.0)
@@ -93,8 +96,8 @@ fn initialize_sc(
                             },
                             leaf: Leaf {
                                 command_channel: leaf_info.command_send_channel.clone(),
+                                leaf_type: LeafType::Client,
                             },
-                            leaf_type: LeafType::Client,
                         },
                         Sprite::from_image(asset_server.load("client.png")),
                         Transform {
@@ -115,9 +118,9 @@ fn initialize_sc(
             TypeInfo::Server(leaf_info) => {
                 let random_position = Vec3::new(
                     if rng.gen_bool(0.5) {
-                        rng.gen_range(-600.0..-200.0)
+                        rng.gen_range(-400.0..-200.0)
                     } else {
-                        rng.gen_range(200.0..600.0)
+                        rng.gen_range(0.0..400.0)
                     },
                     if rng.gen_bool(0.5) {
                         rng.gen_range(-400.0..-200.0)
@@ -137,8 +140,8 @@ fn initialize_sc(
                             },
                             leaf: Leaf {
                                 command_channel: leaf_info.command_send_channel.clone(),
+                                leaf_type: LeafType::Server,
                             },
-                            leaf_type: LeafType::Server,
                         },
                         Sprite::from_image(asset_server.load("server.png")),
                         Transform {
@@ -174,6 +177,20 @@ fn initialize_sc(
         }
     }
 }
+
+fn initialize_items(mut commands: Commands, asset_server: Res<AssetServer>) {
+    commands.spawn((
+        Sprite::from_image(asset_server.load("selected.png")),
+        Transform {
+            translation: Vec3::new(0.0, 0.0, -10.0),
+            scale: Vec3::new(1.0, 1.0, 1.0),
+            ..Default::default()
+        },
+        Visibility::Hidden,
+        SelectionSpriteMarker,
+    ));
+}
+
 fn update_edges(
     mut edge_query: Query<(&Edge, &mut Transform)>,
     node_query: Query<(&Node, &Transform), Without<Edge>>,
