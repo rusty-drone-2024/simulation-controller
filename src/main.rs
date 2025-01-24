@@ -3,7 +3,9 @@ use bevy_egui::EguiPlugin;
 mod ui;
 
 use ui::camera::CameraPlugin;
-use ui::resources::InitResourcesPlugin;
+use ui::drone_system::DronePlugin;
+use ui::graph_physics::PhysicsPlugin;
+use ui::res_init::InitResourcesPlugin;
 use ui::spawn_topology::SpawnTopologyPlugin;
 use ui::windows::WindowPlugin;
 
@@ -15,5 +17,7 @@ fn main() {
         .add_plugins(CameraPlugin)
         .add_plugins(SpawnTopologyPlugin)
         .add_plugins(WindowPlugin)
+        .add_plugins(DronePlugin)
+        .add_plugins(PhysicsPlugin)
         .run();
 }
