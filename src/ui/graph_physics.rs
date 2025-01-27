@@ -18,6 +18,7 @@ impl Plugin for PhysicsPlugin {
     }
 }
 
+#[allow(unused)]
 fn log_with_timestamp(message: &str) {
     let now = SystemTime::now()
         .duration_since(UNIX_EPOCH)
@@ -27,7 +28,7 @@ fn log_with_timestamp(message: &str) {
 }
 
 fn fill_graph(query: Query<(&Node, &Transform), Added<Node>>, mut graph: ResMut<Graph>) {
-    log_with_timestamp("fill_graph system called");
+    //log_with_timestamp("fill_graph system called");
     for (node, transform) in query.iter() {
         add_node_to_graph(
             &mut graph,
@@ -42,17 +43,17 @@ fn fill_graph(query: Query<(&Node, &Transform), Added<Node>>, mut graph: ResMut<
 }
 
 fn update_graph_positions(mut graph: ResMut<Graph>, time: Res<Time>) {
-    log_with_timestamp("update_graph_positions system called");
+    //log_with_timestamp("update_graph_positions system called");
     graph.force_graph.update(time.delta_secs());
 }
 
 fn update_nodes_positions(graph: Res<Graph>, mut query: Query<(&Node, &mut Transform)>) {
-    log_with_timestamp("update_nodes_positions system called");
+    //log_with_timestamp("update_nodes_positions system called");
     const SHIFT: f32 = 200.0;
+    const SCALE: f32 = 1.2;
     for (node, mut transform) in query.iter_mut() {
         if let Some((x, y)) = get_coordinates(&graph, node.id) {
-            transform.translation = Vec3::new(x - SHIFT, y, 0.0);
-            println!("Values of x and y are: {}, {}", x, y);
+            transform.translation = Vec3::new(x * SCALE - SHIFT, y * SCALE, 0.0);
         }
     }
 }

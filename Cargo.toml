@@ -14,6 +14,7 @@ rand = "0.8.4"
 force_graph = "0.3.2"
 petgraph = "0.5.1"
 bevy_egui = "0.32.0"
+bevy-inspector-egui = "0.29.1"
 
 [profile.dev]
 opt-level = 1

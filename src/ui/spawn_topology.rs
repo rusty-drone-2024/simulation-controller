@@ -2,9 +2,8 @@ use super::components::{
     Drone, DroneBundle, Edge, Leaf, LeafBundle, LeafType, Node, SelectionSpriteMarker,
 };
 use bevy::{color, prelude::*};
-use common_structs::network::TypeInfo;
-
-use network_initializer::initialize_default_network;
+use network_initializer::network::TypeInfo;
+use network_initializer::NetworkInitializer;
 
 use super::on_click::{observer_drone, observer_leaf};
 use rand::Rng;
@@ -27,20 +26,20 @@ fn initialize_sc(
     mut meshes: ResMut<Assets<Mesh>>,
     mut materials: ResMut<Assets<ColorMaterial>>,
 ) {
-    let network = initialize_default_network("config.toml");
+    let network = NetworkInitializer::initialize_default_network("config.toml");
     let mut rng = rand::thread_rng();
 
     let scale_factor = Vec3::new(0.6, 0.6, 0.6);
     let mut connection_set: HashSet<(NodeId, NodeId)> = HashSet::new();
 
     for (node_id, node_info) in network.topology.iter() {
+        let random_position = Vec3::new(
+            rng.gen_range(-200.0..100.0),
+            rng.gen_range(-150.0..150.0),
+            0.0,
+        );
         match &node_info.type_info {
             TypeInfo::Drone(drone_info) => {
-                let random_position = Vec3::new(
-                    rng.gen_range(-200.0..100.0),
-                    rng.gen_range(-150.0..150.0),
-                    0.0,
-                );
                 let entity_id = commands
                     .spawn((
                         DroneBundle {
@@ -72,19 +71,6 @@ fn initialize_sc(
                 commands.entity(entity_id).observe(observer_drone);
             }
             TypeInfo::Client(leaf_info) => {
-                let random_position = Vec3::new(
-                    if rng.gen_bool(0.5) {
-                        rng.gen_range(-400.0..-200.0)
-                    } else {
-                        rng.gen_range(0.0..400.0)
-                    },
-                    if rng.gen_bool(0.5) {
-                        rng.gen_range(-400.0..-200.0)
-                    } else {
-                        rng.gen_range(200.0..400.0)
-                    },
-                    0.0,
-                );
                 let entity_id = commands
                     .spawn((
                         LeafBundle {
@@ -116,19 +102,6 @@ fn initialize_sc(
                 commands.entity(entity_id).observe(observer_leaf);
             }
             TypeInfo::Server(leaf_info) => {
-                let random_position = Vec3::new(
-                    if rng.gen_bool(0.5) {
-                        rng.gen_range(-400.0..-200.0)
-                    } else {
-                        rng.gen_range(0.0..400.0)
-                    },
-                    if rng.gen_bool(0.5) {
-                        rng.gen_range(-400.0..-200.0)
-                    } else {
-                        rng.gen_range(200.0..400.0)
-                    },
-                    0.0,
-                );
                 let entity_id = commands
                     .spawn((
                         LeafBundle {

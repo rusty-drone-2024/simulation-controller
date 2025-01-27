@@ -29,6 +29,9 @@ pub struct Node {
 pub struct SelectedMarker;
 
 #[derive(Component)]
+pub struct CrashMarker;
+
+#[derive(Component)]
 pub struct SelectionSpriteMarker;
 
 #[derive(Clone, Component)]
