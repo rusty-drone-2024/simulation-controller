@@ -10,6 +10,7 @@ use ui::graph_physics::PhysicsPlugin;
 use ui::initializer::SpawnTopologyPlugin;
 use ui::res_init::InitResourcesPlugin;
 use ui::windows::WindowPlugin;
+use ui::event_listener::EventListenerPlugin;
 
 fn main() {
     App::new()
@@ -22,6 +23,7 @@ fn main() {
         .add_plugins(DronePlugin)
         .add_plugins(PhysicsPlugin)
         .add_plugins(CommandsPlugin)
+        .add_plugins(EventListenerPlugin)
         .add_plugins(WorldInspectorPlugin::new())
         .run();
 }

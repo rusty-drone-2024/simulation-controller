@@ -5,18 +5,19 @@ use bevy::prelude::*;
 use common_structs::leaf::LeafEvent;
 use wg_2024::controller::DroneEvent;
 
-pub struct EventListener;
+pub struct EventListenerPlugin;
 
-impl Plugin for EventListener {
+impl Plugin for EventListenerPlugin {
     fn build(&self, app: &mut App) {
         app.add_systems(Update, listen_drones_events);
         app.add_systems(Update, listen_leaves_events);
     }
 }
 
+// TODO cach each packettype to log different messages depending on whats happening/wrong
 fn listen_drones_events(drone_listener: Res<DroneListener>, node_query: Query<&Node>) {
     loop {
-        match drone_listener.receiver.recv() {
+        match drone_listener.receiver.try_recv() {
             Ok(event) => match event {
                 DroneEvent::PacketDropped(p) => {
                     println!("Drone {}, has dropped the packet: {:?}", p.routing_header.hops[p.routing_header.hop_index-1], p);
@@ -47,7 +48,7 @@ fn listen_drones_events(drone_listener: Res<DroneListener>, node_query: Query<&N
 
 fn listen_leaves_events(leaf_listener: Res<LeafListener>, node_query: Query<&Node>) {
     loop {
-        match leaf_listener.receiver.recv() {
+        match leaf_listener.receiver.try_recv() {
             Ok(event) => match event {
                 LeafEvent::PacketSend(p) => {
                     println!("Leaf {}, has sent the packet: {:?}", p.routing_header.hops[p.routing_header.hop_index-1], p);
