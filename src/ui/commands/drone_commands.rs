@@ -1,4 +1,6 @@
-use crate::ui::components::{Drone, Leaf, Node, SelectedMarker, CrashMarker};
+use crate::ui::components::{
+    CrashMarker, Drone, Edge, Leaf, Node, SelectedMarker, SelectionSpriteMarker,
+};
 
 use bevy::prelude::*;
 
@@ -23,12 +25,20 @@ impl Drone {
     }
 }
 
-// TODO CHECK THAT THE RESULTIng TOPOLOGY IS STILL CONNECTED
+// TODO CHECK THAT THE RESULTING TOPOLOGY IS STILL CONNECTED
 pub fn crash(
     mut commands: Commands,
-    mut drone_to_crash_query: Query<(Entity, &Drone, &mut Node), (With<SelectedMarker>, With<CrashMarker>)>,
+    mut drone_to_crash_query: Query<
+        (Entity, &Drone, &mut Node),
+        (With<SelectedMarker>, With<CrashMarker>),
+    >,
     mut drone_query: Query<(&Drone, &mut Node), (Without<SelectedMarker>, Without<Leaf>)>,
     mut leaf_query: Query<(&Leaf, &mut Node), Without<Drone>>,
+    mut selected_sprite_query: Query<
+        &mut Visibility,
+        (With<SelectionSpriteMarker>, Without<Drone>, Without<Leaf>),
+    >,
+    edge_query: Query<(Entity, &Edge)>,
 ) {
     let (entity, drone_crashing, node_crashing) = match drone_to_crash_query.iter_mut().next() {
         Some((entity, drone, node)) => (entity, drone, node),
@@ -61,6 +71,14 @@ pub fn crash(
                 }
             }
         }
-        commands.entity(entity).despawn()
+        commands.entity(entity).despawn();
+        for mut visibility in selected_sprite_query.iter_mut() {
+            *visibility = Visibility::Hidden;
+        }
+        for (entity, edge) in edge_query.iter() {
+            if edge.start_node == node_crashing.id || edge.end_node == node_crashing.id {
+                commands.entity(entity).despawn();
+            }
+        }
     }
 }

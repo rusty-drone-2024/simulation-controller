@@ -9,9 +9,14 @@ use super::components::Node;
 
 pub struct PhysicsPlugin;
 
+/*
+TODO:
+add node removal from graph
+make node move faster
+*/
 impl Plugin for PhysicsPlugin {
     fn build(&self, app: &mut App) {
-        app.insert_resource(Graph::new()); // Initialize the graph as a resource
+        app.insert_resource(Graph::new());
         app.add_systems(Update, fill_graph);
         app.add_systems(Update, update_graph_positions);
         app.add_systems(Update, update_nodes_positions);
@@ -27,6 +32,7 @@ fn log_with_timestamp(message: &str) {
     info!("[{:.3}] {}", now, message);
 }
 
+//TODO make this do it just once, make it also remove nodes
 fn fill_graph(query: Query<(&Node, &Transform), Added<Node>>, mut graph: ResMut<Graph>) {
     //log_with_timestamp("fill_graph system called");
     for (node, transform) in query.iter() {

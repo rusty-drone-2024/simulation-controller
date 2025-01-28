@@ -1,4 +1,4 @@
-use crate::ui::components::{Drone, Leaf, Node, SelectedMarker, CrashMarker};
+use crate::ui::components::{CrashMarker, Drone, Leaf, Node, SelectedMarker};
 
 use bevy::prelude::*;
 use bevy_egui::*;

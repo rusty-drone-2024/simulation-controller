@@ -5,7 +5,8 @@ use bevy::{color, prelude::*};
 use network_initializer::network::TypeInfo;
 use network_initializer::NetworkInitializer;
 
-use super::on_click::{observer_drone, observer_leaf};
+use crate::ui::on_click::{observer_drone, observer_leaf};
+use crate::ui::resources::{DroneListener, LeafListener};
 use rand::Rng;
 use std::collections::HashSet;
 use wg_2024::network::NodeId;
@@ -27,8 +28,14 @@ fn initialize_sc(
     mut materials: ResMut<Assets<ColorMaterial>>,
 ) {
     let network = NetworkInitializer::initialize_default_network("config.toml");
-    let mut rng = rand::thread_rng();
+    commands.insert_resource(DroneListener {
+        receiver: network.simulation_channels.drone_event_listener,
+    });
+    commands.insert_resource(LeafListener {
+        receiver: network.simulation_channels.leaf_event_listener,
+    });
 
+    let mut rng = rand::thread_rng();
     let scale_factor = Vec3::new(0.6, 0.6, 0.6);
     let mut connection_set: HashSet<(NodeId, NodeId)> = HashSet::new();
 

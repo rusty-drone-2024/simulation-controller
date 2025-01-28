@@ -4,12 +4,12 @@ use bevy_inspector_egui::quick::WorldInspectorPlugin;
 mod ui;
 
 use ui::camera::CameraPlugin;
+use ui::commands::CommandsPlugin;
 use ui::drone_system::DronePlugin;
 use ui::graph_physics::PhysicsPlugin;
+use ui::initializer::SpawnTopologyPlugin;
 use ui::res_init::InitResourcesPlugin;
-use ui::spawn_topology::SpawnTopologyPlugin;
 use ui::windows::WindowPlugin;
-use ui::commands::CommandsPlugin;
 
 fn main() {
     App::new()

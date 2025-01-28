@@ -6,8 +6,6 @@ mod utils;
 
 use drone_commands::crash;
 
-
-
 pub struct CommandsPlugin;
 
 impl Plugin for CommandsPlugin {
