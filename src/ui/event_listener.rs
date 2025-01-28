@@ -1,5 +1,5 @@
-use crate::ui::resources::{DroneListener, LeafListener};
 use crate::ui::components::Node;
+use crate::ui::resources::{DroneListener, LeafListener};
 use bevy::prelude::*;
 
 use common_structs::leaf::LeafEvent;
@@ -21,10 +21,10 @@ fn listen_drones_events(drone_listener: Res<DroneListener>, node_query: Query<&N
         match event {
             DroneEvent::PacketDropped(_p) => {
                 //println!("Drone {}, has dropped the packet: {}", _p.routing_header.hops[p.routing_header.hop_index-1], _p);
-            },
+            }
             DroneEvent::PacketSent(_p) => {
                 //println!("Drone {}, has forwarded the packet: {}", _p.routing_header.hops[p.routing_header.hop_index-1], _p);
-            },
+            }
             DroneEvent::ControllerShortcut(p) => {
                 shortcut(&node_query, p);
             }
@@ -37,7 +37,7 @@ fn listen_leaves_events(leaf_listener: Res<LeafListener>, node_query: Query<&Nod
         match event {
             LeafEvent::PacketSend(_p) => {
                 //println!("Leaf {}, has sent the packet: {}", p.routing_header.hops[p.routing_header.hop_index-1], _p);
-            },
+            }
             LeafEvent::ControllerShortcut(p) => {
                 shortcut(&node_query, p);
             }
@@ -45,19 +45,21 @@ fn listen_leaves_events(leaf_listener: Res<LeafListener>, node_query: Query<&Nod
     }
 }
 
-fn shortcut(node_query: &Query<&Node>,  packet: Packet){
+fn shortcut(node_query: &Query<&Node>, packet: Packet) {
     let Some(dest) = &packet.routing_header.destination() else {
         return eprintln!("### SHORTCUT: NO DESTINATION");
     };
 
-    let Some(node) = node_query.iter().find(|&node| {*dest == node.id}) else {
+    let Some(node) = node_query.iter().find(|&node| *dest == node.id) else {
         return eprintln!("### SHORTCUT: DIDN'T FIND DESTINATION");
     };
 
     if node.packet_channel.send(packet.clone()).is_ok() {
-        println!("### SHORTCUT: Node with ID: {}, has received the packet: {}",node.id , packet);
+        println!(
+            "### SHORTCUT: Node with ID: {}, has received the packet: {}",
+            node.id, packet
+        );
     } else {
         println!("### SHORTCUT: failed to shortcut");
     }
-
 }
