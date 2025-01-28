@@ -97,8 +97,8 @@ impl Graph {
 fn add_node_to_graph(graph: &mut ResMut<Graph>, node_id: NodeId, x: f32, y: f32) {
     if !graph.correlation.contains_key(&node_id) {
         let node_index = graph.force_graph.add_node(NodeData {
-            x: x,
-            y: y,
+            x,
+            y,
             ..Default::default()
         });
         graph.correlation.insert(node_id, node_index);

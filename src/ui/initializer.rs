@@ -1,7 +1,7 @@
 use super::components::{
     Drone, DroneBundle, Edge, Leaf, LeafBundle, LeafType, Node, SelectionSpriteMarker,
 };
-use bevy::{color, prelude::*};
+use bevy::{prelude::*};
 use network_initializer::network::TypeInfo;
 use network_initializer::NetworkInitializer;
 
@@ -73,7 +73,7 @@ fn initialize_sc(
                     id: *node_id,
                     neighbours: node_info.neighbours.clone(),
                     packet_channel: node_info.packet_in_channel.clone(),
-                    entity_id: Entity::from(entity_id),
+                    entity_id,
                 });
                 commands.entity(entity_id).observe(observer_drone);
             }
@@ -104,7 +104,7 @@ fn initialize_sc(
                     id: *node_id,
                     neighbours: node_info.neighbours.clone(),
                     packet_channel: node_info.packet_in_channel.clone(),
-                    entity_id: Entity::from(entity_id),
+                    entity_id,
                 });
                 commands.entity(entity_id).observe(observer_leaf);
             }
@@ -135,7 +135,7 @@ fn initialize_sc(
                     id: *node_id,
                     neighbours: node_info.neighbours.clone(),
                     packet_channel: node_info.packet_in_channel.clone(),
-                    entity_id: Entity::from(entity_id),
+                    entity_id,
                 });
                 commands.entity(entity_id).observe(observer_leaf);
             }
@@ -149,7 +149,7 @@ fn initialize_sc(
                     },
                     Transform::default(),
                     Mesh2d(meshes.add(Rectangle::new(1.0, 1.0))),
-                    MeshMaterial2d(materials.add(color::Color::srgb(100.0, 100.0, 100.0))),
+                    MeshMaterial2d(materials.add(Color::srgb(100.0, 100.0, 100.0))),
                 ));
                 connection_set.insert((*node_id, *neighbour_id));
                 connection_set.insert((*neighbour_id, *node_id));

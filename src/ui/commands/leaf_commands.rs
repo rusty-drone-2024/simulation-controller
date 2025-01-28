@@ -1,5 +1,7 @@
 use super::super::components::LeafBundle;
 
 impl LeafBundle {
-    pub fn new() -> () {} // TODO
+    pub fn new() -> Self {
+        todo!()
+    }
 }
