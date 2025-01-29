@@ -26,10 +26,27 @@ pub struct Node {
 }
 
 #[derive(Component)]
+pub struct Edge {
+    pub start_node: NodeId,
+    pub end_node: NodeId,
+}
+
+#[derive(Component)]
 pub struct SelectedMarker;
 
 #[derive(Component)]
 pub struct CrashMarker;
+
+#[derive(Component)]
+pub struct NodeForceGraphMarker {
+    pub index: petgraph::stable_graph::NodeIndex<u8>,
+}
+
+#[derive(Component)]
+pub struct EdgeForceGraphMarker {
+    pub start_node: petgraph::stable_graph::NodeIndex<u8>,
+    pub end_node: petgraph::stable_graph::NodeIndex<u8>,
+}
 
 #[derive(Component)]
 pub struct SelectionSpriteMarker;
@@ -58,10 +75,4 @@ impl Display for LeafType {
             LeafType::Server => write!(f, "Server"),
         }
     }
-}
-
-#[derive(Component)]
-pub struct Edge {
-    pub start_node: NodeId,
-    pub end_node: NodeId,
 }

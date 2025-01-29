@@ -26,7 +26,7 @@ fn listen_drones_events(drone_listener: Res<DroneListener>, node_query: Query<&N
                 //println!("Drone {}, has forwarded the packet: {}", _p.routing_header.hops[p.routing_header.hop_index-1], _p);
             }
             DroneEvent::ControllerShortcut(p) => {
-                shortcut(&node_query, p);
+                //shortcut(&node_query, p);
             }
         }
     }
@@ -39,7 +39,7 @@ fn listen_leaves_events(leaf_listener: Res<LeafListener>, node_query: Query<&Nod
                 //println!("Leaf {}, has sent the packet: {}", p.routing_header.hops[p.routing_header.hop_index-1], _p);
             }
             LeafEvent::ControllerShortcut(p) => {
-                shortcut(&node_query, p);
+                //shortcut(&node_query, p);
             }
         }
     }
