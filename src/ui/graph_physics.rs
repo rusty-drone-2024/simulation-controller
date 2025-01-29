@@ -21,7 +21,7 @@ impl MyForceGraph {
             anchor_index: None,
         };
         //Adding an anchor node in the
-        let idx = item.data.add_node(NodeData{
+        let idx = item.data.add_node(NodeData {
             x: -200.0,
             y: 0.0,
             mass: 0.1,
@@ -58,11 +58,9 @@ fn update_graph(
             y: transform.translation.y,
             ..Default::default()
         });
-        force_graph.data.add_edge(
-            anchor_index,
-            petgraph_index,
-            Default::default(),
-        );
+        force_graph
+            .data
+            .add_edge(anchor_index, petgraph_index, Default::default());
         commands.entity(entity).insert(NodeForceGraphMarker {
             index: petgraph_index,
         });
@@ -70,7 +68,7 @@ fn update_graph(
     for (entity, edge) in edges.iter() {
         let mut start_node_index = None;
         let mut end_node_index = None;
-    
+
         for (node, petgraph) in nodes_in_graph.iter() {
             if edge.start_node == node.id {
                 start_node_index = Some(petgraph.index);
@@ -79,13 +77,15 @@ fn update_graph(
                 end_node_index = Some(petgraph.index);
             }
         }
-    
+
         if let (Some(start_node), Some(end_node)) = (start_node_index, end_node_index) {
-            if start_node != end_node 
-                && force_graph.data.contains(start_node) 
-                && force_graph.data.contains(end_node) 
+            if start_node != end_node
+                && force_graph.data.contains(start_node)
+                && force_graph.data.contains(end_node)
             {
-                force_graph.data.add_edge(start_node, end_node, Default::default());
+                force_graph
+                    .data
+                    .add_edge(start_node, end_node, Default::default());
             }
             commands.entity(entity).insert(EdgeForceGraphMarker {
                 start_node,
@@ -100,10 +100,9 @@ fn update_positions(
     time: Res<Time>,
     mut nodes: Query<(&mut Transform, &NodeForceGraphMarker), With<Node>>,
 ) {
-    force_graph.data.update(time.delta_secs()); 
+    force_graph.data.update(time.delta_secs());
     for (mut transform, petgraph) in nodes.iter_mut() {
         if force_graph.data.contains(petgraph.index) {
-            
             let (x, y) = force_graph.data.get_node_position(petgraph.index);
             transform.translation = Vec3::new(x, y, 0.0);
         }

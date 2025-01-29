@@ -161,7 +161,7 @@ fn initialize_sc(
 
 fn initialize_items(mut commands: Commands, asset_server: Res<AssetServer>) {
     commands.spawn((
-        Sprite{
+        Sprite {
             image: asset_server.load("selected.png"),
             color: Color::srgb(1.0, 0.8, 0.8),
             ..Default::default()
