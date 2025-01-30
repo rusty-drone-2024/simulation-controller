@@ -15,9 +15,11 @@ pub struct SpawnTopologyPlugin;
 
 impl Plugin for SpawnTopologyPlugin {
     fn build(&self, app: &mut App) {
-        app.add_systems(Startup, initialize_sc)
+        app.add_systems(Startup, spawn_soundtrack)
+            .add_systems(Startup, initialize_sc)
             .add_systems(Startup, initialize_items)
             .add_systems(Update, update_edges);
+
     }
 }
 
@@ -173,6 +175,17 @@ fn initialize_items(mut commands: Commands, asset_server: Res<AssetServer>) {
         },
         Visibility::Hidden,
         SelectionSpriteMarker,
+    ));
+}
+
+fn spawn_soundtrack(mut commands: Commands, asset_server: Res<AssetServer>) {
+    commands.spawn((
+        AudioPlayer::new(asset_server.load("soundtrack.mp3")),
+        PlaybackSettings {
+            mode: bevy::audio::PlaybackMode::Loop,
+            volume: bevy::audio::Volume::new(0.5),
+            ..Default::default()
+        },
     ));
 }
 
