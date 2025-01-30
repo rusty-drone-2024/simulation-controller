@@ -117,19 +117,36 @@ fn remove_items(
 ) {
     let node_count = force_graph.data.get_graph().node_count() - 1;
     if node_count > nodes.iter().count() {
-        let indices: Vec<_> = force_graph.data.get_nodes_indices().iter().cloned().collect();
+        let indices: Vec<_> = force_graph
+            .data
+            .get_nodes_indices()
+            .iter()
+            .cloned()
+            .collect();
         for idx in indices.iter() {
-            if !nodes.iter().any(|node| node.index == *idx) && idx != &force_graph.anchor_index.unwrap() {
+            if !nodes.iter().any(|node| node.index == *idx)
+                && idx != &force_graph.anchor_index.unwrap()
+            {
                 force_graph.data.remove_node(*idx);
             }
         }
     }
 
-    let edge_count = force_graph.data.get_graph().edge_count() - force_graph.data.get_graph().node_count();
+    let edge_count =
+        force_graph.data.get_graph().edge_count() - force_graph.data.get_graph().node_count();
     if edge_count > edges.iter().count() {
-        let indices: Vec<_> = force_graph.data.get_edges_indices().iter().cloned().collect();
+        let indices: Vec<_> = force_graph
+            .data
+            .get_edges_indices()
+            .iter()
+            .cloned()
+            .collect();
         for (start, end) in indices.iter() {
-            if !edges.iter().any(|edge| edge.start_node == *start && edge.end_node == *end) && start != &force_graph.anchor_index.unwrap() {
+            if !edges
+                .iter()
+                .any(|edge| edge.start_node == *start && edge.end_node == *end)
+                && start != &force_graph.anchor_index.unwrap()
+            {
                 force_graph.data.remove_edge(*start, *end);
             }
         }

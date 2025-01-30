@@ -169,13 +169,13 @@ impl<UserNodeData, UserEdgeData> ForceGraph<UserNodeData, UserEdgeData> {
         &self.node_indices
     }
 
-/// Get all the tuples of indices of the nodes connected by edges
-pub fn get_edges_indices(&self) -> Vec<(DefaultNodeIdx, DefaultNodeIdx)> {
-    self.graph
-        .edge_references()
-        .map(|edge| (edge.source(), edge.target()))
-        .collect()
-}
+    /// Get all the tuples of indices of the nodes connected by edges
+    pub fn get_edges_indices(&self) -> Vec<(DefaultNodeIdx, DefaultNodeIdx)> {
+        self.graph
+            .edge_references()
+            .map(|edge| (edge.source(), edge.target()))
+            .collect()
+    }
 
     /// Visit the node with matching id returning its position
     pub fn get_node_position(&self, idx: DefaultNodeIdx) -> (f32, f32) {

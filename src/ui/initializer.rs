@@ -19,7 +19,6 @@ impl Plugin for SpawnTopologyPlugin {
             .add_systems(Startup, initialize_sc)
             .add_systems(Startup, initialize_items)
             .add_systems(Update, update_edges);
-
     }
 }
 
