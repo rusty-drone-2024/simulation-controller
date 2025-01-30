@@ -12,17 +12,17 @@ impl MyForceGraph {
     pub fn new() -> Self {
         let mut item = MyForceGraph {
             data: ForceGraph::new(SimulationParameters {
-                force_charge: 10000.0,
+                force_charge: 9000.0,
                 force_spring: 0.3,
-                force_max: 200.0,
-                node_speed: 5000.0,
-                damping_factor: 0.92,
+                force_max: 280.0,
+                node_speed: 7000.0,
+                damping_factor: 0.95,
             }),
             anchor_index: None,
         };
         //Adding an anchor node in the
         let idx = item.data.add_node(NodeData {
-            x: -200.0,
+            x: -300.0,
             y: 0.0,
             mass: 0.1,
             is_anchor: true,
@@ -41,6 +41,7 @@ impl Plugin for PhysicsPlugin {
         app.insert_resource(MyForceGraph::new());
         app.add_systems(Update, update_graph);
         app.add_systems(Update, update_positions);
+        app.add_systems(FixedUpdate, remove_items);
     }
 }
 
@@ -80,8 +81,8 @@ fn update_graph(
 
         if let (Some(start_node), Some(end_node)) = (start_node_index, end_node_index) {
             if start_node != end_node
-                && force_graph.data.contains(start_node)
-                && force_graph.data.contains(end_node)
+                && force_graph.data.contains_node(start_node)
+                && force_graph.data.contains_node(end_node)
             {
                 force_graph
                     .data
@@ -102,9 +103,35 @@ fn update_positions(
 ) {
     force_graph.data.update(time.delta_secs());
     for (mut transform, petgraph) in nodes.iter_mut() {
-        if force_graph.data.contains(petgraph.index) {
+        if force_graph.data.contains_node(petgraph.index) {
             let (x, y) = force_graph.data.get_node_position(petgraph.index);
             transform.translation = Vec3::new(x, y, 0.0);
+        }
+    }
+}
+
+fn remove_items(
+    mut force_graph: ResMut<MyForceGraph>,
+    nodes: Query<&NodeForceGraphMarker>,
+    edges: Query<&EdgeForceGraphMarker>,
+) {
+    let node_count = force_graph.data.get_graph().node_count() - 1;
+    if node_count > nodes.iter().count() {
+        let indices: Vec<_> = force_graph.data.get_nodes_indices().iter().cloned().collect();
+        for idx in indices.iter() {
+            if !nodes.iter().any(|node| node.index == *idx) && idx != &force_graph.anchor_index.unwrap() {
+                force_graph.data.remove_node(*idx);
+            }
+        }
+    }
+
+    let edge_count = force_graph.data.get_graph().edge_count() - force_graph.data.get_graph().node_count();
+    if edge_count > edges.iter().count() {
+        let indices: Vec<_> = force_graph.data.get_edges_indices().iter().cloned().collect();
+        for (start, end) in indices.iter() {
+            if !edges.iter().any(|edge| edge.start_node == *start && edge.end_node == *end) && start != &force_graph.anchor_index.unwrap() {
+                force_graph.data.remove_edge(*start, *end);
+            }
         }
     }
 }
