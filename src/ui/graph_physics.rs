@@ -153,11 +153,18 @@ fn remove_items(
     }
 }
 
-fn update_text_positions(mut query_text: Query<(&Text, &mut Transform)>, query_node: Query<(Entity, &Transform), (With<Node>, Without<Text>)>) {
+fn update_text_positions(
+    mut query_text: Query<(&Text, &mut Transform)>,
+    query_node: Query<(Entity, &Transform), (With<Node>, Without<Text>)>,
+) {
     for (text, mut transform) in query_text.iter_mut() {
         for (entity, node_transform) in query_node.iter() {
             if entity == text.entity_id {
-                transform.translation = Vec3::new(node_transform.translation.x, node_transform.translation.y + 15.0, 15.0);
+                transform.translation = Vec3::new(
+                    node_transform.translation.x,
+                    node_transform.translation.y + 15.0,
+                    15.0,
+                );
             }
         }
     }

@@ -94,7 +94,11 @@ pub fn crash(
     }
 }
 
-fn is_still_connected(drone_query: &Query<(&Drone, &mut Node), (Without<SelectedMarker>, Without<Leaf>)>, leaf_query: &Query<(&Leaf, &mut Node), Without<Drone>>, removed_id: u8) -> bool {
+fn is_still_connected(
+    drone_query: &Query<(&Drone, &mut Node), (Without<SelectedMarker>, Without<Leaf>)>,
+    leaf_query: &Query<(&Leaf, &mut Node), Without<Drone>>,
+    removed_id: u8,
+) -> bool {
     let mut nodes = HashMap::new();
     for (_drone, node) in drone_query.iter() {
         nodes.insert(node.id, node.neighbours.clone());

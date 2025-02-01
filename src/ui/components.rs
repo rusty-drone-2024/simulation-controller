@@ -52,7 +52,7 @@ pub struct EdgeForceGraphMarker {
 pub struct SelectionSpriteMarker;
 
 #[derive(Component)]
-pub struct Text{
+pub struct Text {
     pub entity_id: Entity,
 }
 

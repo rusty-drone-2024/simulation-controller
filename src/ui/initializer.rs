@@ -1,5 +1,5 @@
 use super::components::{
-    Drone, DroneBundle, Edge, Leaf, LeafBundle, LeafType, Node, SelectionSpriteMarker, Text
+    Drone, DroneBundle, Edge, Leaf, LeafBundle, LeafType, Node, SelectionSpriteMarker, Text,
 };
 use bevy::prelude::*;
 use network_initializer::network::TypeInfo;
@@ -80,12 +80,10 @@ fn initialize_sc(
                 });
                 commands.entity(entity_id).observe(observer_drone);
                 commands.spawn((
-                    Text{
-                        entity_id,
-                    },
+                    Text { entity_id },
                     Text2d(format!("Drone {}", *node_id)),
-                    Transform{
-                        translation: Vec3::new(random_position.x, random_position.y+15.0, 15.0),
+                    Transform {
+                        translation: Vec3::new(random_position.x, random_position.y + 15.0, 15.0),
                         scale: text_scale_factor,
                         ..Default::default()
                     },
@@ -122,12 +120,10 @@ fn initialize_sc(
                 });
                 commands.entity(entity_id).observe(observer_leaf);
                 commands.spawn((
-                    Text{
-                        entity_id,
-                    },
+                    Text { entity_id },
                     Text2d(format!("Client {}", *node_id)),
-                    Transform{
-                        translation: Vec3::new(random_position.x, random_position.y+15.0, 15.0),
+                    Transform {
+                        translation: Vec3::new(random_position.x, random_position.y + 15.0, 15.0),
                         scale: text_scale_factor,
                         ..Default::default()
                     },
@@ -164,12 +160,10 @@ fn initialize_sc(
                 });
                 commands.entity(entity_id).observe(observer_leaf);
                 commands.spawn((
-                    Text{
-                        entity_id,
-                    },
+                    Text { entity_id },
                     Text2d(format!("Server {}", *node_id)),
-                    Transform{
-                        translation: Vec3::new(random_position.x, random_position.y+15.0, 15.0),
+                    Transform {
+                        translation: Vec3::new(random_position.x, random_position.y + 15.0, 15.0),
                         scale: text_scale_factor,
                         ..Default::default()
                     },
