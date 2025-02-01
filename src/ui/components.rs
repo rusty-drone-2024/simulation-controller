@@ -51,6 +51,11 @@ pub struct EdgeForceGraphMarker {
 #[derive(Component)]
 pub struct SelectionSpriteMarker;
 
+#[derive(Component)]
+pub struct Text {
+    pub entity_id: Entity,
+}
+
 #[derive(Clone, Component)]
 pub struct Drone {
     pub command_channel: Sender<DroneCommand>,
