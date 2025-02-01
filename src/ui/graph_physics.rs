@@ -1,4 +1,4 @@
-use super::components::{Edge, EdgeForceGraphMarker, Node, NodeForceGraphMarker};
+use super::components::{Edge, EdgeForceGraphMarker, Node, NodeForceGraphMarker, Text};
 use bevy::prelude::*;
 use force_graph::{ForceGraph, NodeData, SimulationParameters};
 
@@ -33,7 +33,6 @@ impl MyForceGraph {
     }
 }
 
-//TODO removal
 pub struct PhysicsPlugin;
 
 impl Plugin for PhysicsPlugin {
@@ -42,6 +41,7 @@ impl Plugin for PhysicsPlugin {
         app.add_systems(Update, update_graph);
         app.add_systems(Update, update_positions);
         app.add_systems(FixedUpdate, remove_items);
+        app.add_systems(Update, update_text_positions);
     }
 }
 
@@ -148,6 +148,16 @@ fn remove_items(
                 && start != &force_graph.anchor_index.unwrap()
             {
                 force_graph.data.remove_edge(*start, *end);
+            }
+        }
+    }
+}
+
+fn update_text_positions(mut query_text: Query<(&Text, &mut Transform)>, query_node: Query<(Entity, &Transform), (With<Node>, Without<Text>)>) {
+    for (text, mut transform) in query_text.iter_mut() {
+        for (entity, node_transform) in query_node.iter() {
+            if entity == text.entity_id {
+                transform.translation = Vec3::new(node_transform.translation.x, node_transform.translation.y + 15.0, 15.0);
             }
         }
     }

@@ -1,5 +1,5 @@
 use super::components::{
-    Drone, DroneBundle, Edge, Leaf, LeafBundle, LeafType, Node, SelectionSpriteMarker,
+    Drone, DroneBundle, Edge, Leaf, LeafBundle, LeafType, Node, SelectionSpriteMarker, Text
 };
 use bevy::prelude::*;
 use network_initializer::network::TypeInfo;
@@ -37,14 +37,15 @@ fn initialize_sc(
         receiver: network.simulation_channels.leaf_event_listener,
     });
 
-    let mut rng = rand::thread_rng();
+    let mut rng = rand::rng();
     let scale_factor = Vec3::new(0.6, 0.6, 0.6);
+    let text_scale_factor = Vec3::new(0.8, 0.8, 0.8);
     let mut connection_set: HashSet<(NodeId, NodeId)> = HashSet::new();
 
     for (node_id, node_info) in network.topology.iter() {
         let random_position = Vec3::new(
-            rng.gen_range(-200.0..100.0),
-            rng.gen_range(-150.0..150.0),
+            rng.random_range(-200.0..100.0),
+            rng.random_range(-150.0..150.0),
             0.0,
         );
         match &node_info.type_info {
@@ -78,6 +79,17 @@ fn initialize_sc(
                     entity_id,
                 });
                 commands.entity(entity_id).observe(observer_drone);
+                commands.spawn((
+                    Text{
+                        entity_id,
+                    },
+                    Text2d(format!("Drone {}", *node_id)),
+                    Transform{
+                        translation: Vec3::new(random_position.x, random_position.y+15.0, 15.0),
+                        scale: text_scale_factor,
+                        ..Default::default()
+                    },
+                ));
             }
             TypeInfo::Client(leaf_info) => {
                 let entity_id = commands
@@ -109,6 +121,17 @@ fn initialize_sc(
                     entity_id,
                 });
                 commands.entity(entity_id).observe(observer_leaf);
+                commands.spawn((
+                    Text{
+                        entity_id,
+                    },
+                    Text2d(format!("Client {}", *node_id)),
+                    Transform{
+                        translation: Vec3::new(random_position.x, random_position.y+15.0, 15.0),
+                        scale: text_scale_factor,
+                        ..Default::default()
+                    },
+                ));
             }
             TypeInfo::Server(leaf_info) => {
                 let entity_id = commands
@@ -140,6 +163,17 @@ fn initialize_sc(
                     entity_id,
                 });
                 commands.entity(entity_id).observe(observer_leaf);
+                commands.spawn((
+                    Text{
+                        entity_id,
+                    },
+                    Text2d(format!("Server {}", *node_id)),
+                    Transform{
+                        translation: Vec3::new(random_position.x, random_position.y+15.0, 15.0),
+                        scale: text_scale_factor,
+                        ..Default::default()
+                    },
+                ));
             }
         }
         for neighbour_id in node_info.neighbours.iter() {

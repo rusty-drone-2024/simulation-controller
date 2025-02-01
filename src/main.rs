@@ -1,6 +1,5 @@
 use bevy::prelude::*;
 use bevy_egui::EguiPlugin;
-use bevy_inspector_egui::quick::WorldInspectorPlugin;
 mod ui;
 
 use ui::camera::CameraPlugin;
@@ -24,6 +23,5 @@ fn main() {
         .add_plugins(PhysicsPlugin)
         .add_plugins(CommandsPlugin)
         .add_plugins(EventListenerPlugin)
-        .add_plugins(WorldInspectorPlugin::new())
         .run();
 }
