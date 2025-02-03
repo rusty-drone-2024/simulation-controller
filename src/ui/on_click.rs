@@ -1,5 +1,5 @@
 use super::components::{Drone, Node, SelectedMarker};
-use super::windows::UiState;
+use super::windows::SelectedUiState;
 
 use bevy::prelude::*;
 
@@ -9,7 +9,7 @@ pub fn observer_drone(
     last_selected_node_query: Query<Entity, With<SelectedMarker>>,
     mut to_select_node_query: Query<(&mut Node, &Drone, &Transform), Without<SelectedMarker>>,
     mut selector_query: Query<(&mut Transform, &mut Visibility), (Without<Node>, Without<Camera>)>,
-    mut ui_state: ResMut<UiState>,
+    mut selected_state: ResMut<SelectedUiState>,
 ) {
     let entity = trigger.entity();
 
@@ -18,7 +18,7 @@ pub fn observer_drone(
     }
     for (node, drone, transform) in to_select_node_query.iter_mut() {
         if node.entity_id == entity {
-            ui_state.pdr = Some(drone.pdr.clone().to_string());
+            selected_state.pdr = Some(drone.pdr.clone().to_string());
             commands.entity(entity).insert(SelectedMarker);
             for (mut selector, mut visibility) in selector_query.iter_mut() {
                 selector.translation =
@@ -35,7 +35,7 @@ pub fn observer_leaf(
     last_selected_node_query: Query<Entity, With<SelectedMarker>>,
     mut to_select_node_query: Query<(&mut Node, &Transform), Without<SelectedMarker>>,
     mut selector_query: Query<(&mut Transform, &mut Visibility), (Without<Node>, Without<Camera>)>,
-    mut ui_state: ResMut<UiState>,
+    mut selected_state: ResMut<SelectedUiState>,
 ) {
     let entity = trigger.entity();
 
@@ -44,7 +44,7 @@ pub fn observer_leaf(
     }
     for (node, transform) in to_select_node_query.iter_mut() {
         if node.entity_id == entity {
-            ui_state.pdr = None;
+            selected_state.pdr = None;
             commands.entity(entity).insert(SelectedMarker);
             for (mut selector, mut visibility) in selector_query.iter_mut() {
                 selector.translation =

@@ -37,10 +37,15 @@ fn int_to_rgb(n: usize) -> (f32, f32, f32) {
 
 fn update_selected_position(
     node_query: Query<&Transform, (With<SelectedMarker>, Without<SelectionSpriteMarker>)>,
-    mut selector_query: Query<&mut Transform, With<SelectionSpriteMarker>>,
+    mut selector_query: Query<(&mut Transform, &mut Visibility), With<SelectionSpriteMarker>>,
 ) {
+    if node_query.iter().count() == 0 {
+        for (_transform, mut visibility) in selector_query.iter_mut() {
+            *visibility = Visibility::Hidden;
+        }
+    }
     for node_transform in node_query.iter() {
-        for mut transform in selector_query.iter_mut() {
+        for (mut transform, _visibility) in selector_query.iter_mut() {
             transform.translation = node_transform.translation;
         }
     }

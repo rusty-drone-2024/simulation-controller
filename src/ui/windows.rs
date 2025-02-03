@@ -13,17 +13,28 @@ impl Plugin for WindowPlugin {
 }
 
 #[derive(Resource, Debug)]
-pub struct UiState {
+pub struct MainUiState {
+    pub new_pdr: Option<String>,
+    pub nbhg_1: Option<String>,
+    pub nbhg_2: Option<String>,
+}
+#[derive(Resource, Debug)]
+pub struct SelectedUiState {
     pub pdr: Option<String>,
-    pub start_node: Option<String>,
-    pub end_node: Option<String>,
+    pub node_to_add: Option<String>,
+    pub node_to_rmv: Option<String>,
 }
 
 fn initialize_ui_state(mut commands: Commands) {
-    commands.insert_resource(UiState {
-        pdr: None,
-        start_node: Some(0.to_string()),
-        end_node: Some(0.to_string()),
+    commands.insert_resource(MainUiState {
+        new_pdr: Some(0.0.to_string()),
+        nbhg_1: Some(0.to_string()),
+        nbhg_2: Some(0.to_string()),
+    });
+    commands.insert_resource(SelectedUiState {
+        pdr: Some(0.0.to_string()),
+        node_to_add: Some(0.to_string()),
+        node_to_rmv: Some(0.to_string()),
     });
 }
 
@@ -32,7 +43,9 @@ fn window(
     mut contexts: EguiContexts,
     mut query_drone: Query<(Entity, &Node, &mut Drone), (With<SelectedMarker>, Without<Leaf>)>,
     query_leaf: Query<(&Node, &Leaf), (With<SelectedMarker>, Without<Drone>)>,
-    mut ui_state: ResMut<UiState>,
+    mut query_all_nodes: Query<&Node, Without<SelectedMarker>>,
+    mut main_state: ResMut<MainUiState>,
+    mut selected_state: ResMut<SelectedUiState>,
 ) {
     egui::SidePanel::right("Info")
         .resizable(false)
@@ -48,7 +61,7 @@ fn window(
                 fill: egui::Color32::from_rgb(30, 30, 30),
                 stroke: egui::Stroke::new(2.0, egui::Color32::from_rgb(100, 200, 250)),
                 rounding: egui::Rounding::same(10.0),
-                inner_margin: egui::Margin::same(4.0), // Keep inner frame stroke within bounds
+                inner_margin: egui::Margin::same(4.0),
                 ..Default::default()
             };
 
@@ -62,33 +75,26 @@ fn window(
                 ui.separator();
                 ui.add_space(2.0);
                 ui.horizontal(|ui| {
-                    ui.label("Create edge from:  ");
+                    ui.label("Create a new drone with PDR:");
                     ui.add_sized(
                         [60.0, 20.0],
-                        egui::TextEdit::singleline(ui_state.start_node.as_mut().unwrap()),
+                        egui::TextEdit::singleline(main_state.new_pdr.as_mut().unwrap()),
                     );
-                    ui.label("to:");
-                    ui.add_sized(
-                        [60.0, 20.0],
-                        egui::TextEdit::singleline(ui_state.end_node.as_mut().unwrap()),
-                    );
-                    if ui.button("Add").clicked() {}
                 });
                 ui.add_space(2.0);
                 ui.separator();
                 ui.add_space(2.0);
                 ui.horizontal(|ui| {
-                    ui.label("Delete edge from: ");
+                    ui.label("Connected with nodes (id): ");
                     ui.add_sized(
                         [60.0, 20.0],
-                        egui::TextEdit::singleline(ui_state.start_node.as_mut().unwrap()),
+                        egui::TextEdit::singleline(main_state.nbhg_1.as_mut().unwrap()),
                     );
-                    ui.label("to:");
+                    ui.label(" & ");
                     ui.add_sized(
                         [60.0, 20.0],
-                        egui::TextEdit::singleline(ui_state.end_node.as_mut().unwrap()),
+                        egui::TextEdit::singleline(main_state.nbhg_2.as_mut().unwrap()),
                     );
-                    if ui.button("Remove").clicked() {}
                 });
                 ui.add_space(2.0);
                 ui.separator();
@@ -125,27 +131,70 @@ fn window(
                                 ui.with_layout(egui::Layout::top_down(egui::Align::Center), |ui| {
                                     ui.heading(format!("Drone with id: {:?}", node.id));
                                     ui.add_space(10.0);
-                                    ui.separator();
-                                    ui.add_space(10.0);
                                 });
                                 ui.horizontal(|ui| {
+                                    ui.label(format!("Neighbors: {:?}", node.neighbours));
+                                    ui.add_space(20.0);
                                     ui.label("PDR:");
-                                    ui.text_edit_singleline(ui_state.pdr.as_mut().unwrap());
+                                    ui.add_sized(
+                                        [60.0, 20.0],
+                                        egui::TextEdit::singleline(selected_state.pdr.as_mut().unwrap()),
+                                    );
                                     if ui.button("Update").clicked() {
-                                        if let Some(pdr_s) = &ui_state.pdr {
+                                        if let Some(pdr_s) = &selected_state.pdr {
                                             if let Ok(pdr) = pdr_s.parse::<f32>() {
                                                 if pdr > 0.0 && pdr <= 1.0 {
                                                     let _res = drone.set_packet_drop_rate(pdr);
                                                     println!(
                                                         "New PDR: {}",
-                                                        ui_state.pdr.as_ref().unwrap()
+                                                        selected_state.pdr.as_ref().unwrap()
                                                     );
                                                 }
                                             }
                                         }
                                     }
                                 });
-                                ui.label(format!("Neighbors: {:?}", node.neighbours));
+                                ui.add_space(10.0);
+                                ui.separator();
+                                ui.separator();
+                                ui.heading("Infos:");
+                                //TODO: Add more infos
+                                ui.add_space(100.0);
+                                // END TODO
+                                ui.add_space(10.0);
+                                ui.separator();
+                                ui.separator();
+                                ui.heading("Actions:");
+                                ui.add_space(10.0);
+                                ui.horizontal(|ui|{
+                                    ui.label("Add a connection with node with id:");
+                                    ui.add_sized(
+                                        [60.0, 20.0],
+                                        egui::TextEdit::singleline(selected_state.node_to_add.as_mut().unwrap()),
+                                    );
+                                    if ui.button("Add").clicked() {
+                                        if let Some(node_id) = &selected_state.node_to_add {
+                                            if let Ok(id) = node_id.parse::<u8>() {
+                                                println!("Trying to add a connection with node with id: {:?}", id);
+                                            }
+                                        }
+                                    }
+                                });
+                                ui.add_space(10.0);
+                                ui.horizontal(|ui|{
+                                    ui.label("Remove a connection with node (id):");
+                                    ui.add_sized(
+                                        [60.0, 20.0],
+                                        egui::TextEdit::singleline(selected_state.node_to_rmv.as_mut().unwrap()),
+                                    );
+                                    if ui.button("Remove").clicked() {
+                                        if let Some(node_id) = &selected_state.node_to_rmv {
+                                            if let Ok(id) = node_id.parse::<u8>() {
+                                                println!("Trying to remove a connection with node (id): {:?}", id);
+                                            }
+                                        }
+                                    }
+                                });
 
                                 ui.with_layout(
                                     egui::Layout::bottom_up(egui::Align::Center),

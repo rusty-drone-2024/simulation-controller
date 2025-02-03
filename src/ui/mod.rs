@@ -1,6 +1,7 @@
 pub mod camera;
 pub mod commands;
 pub mod components;
+pub mod creator;
 pub mod drone_system;
 pub mod event_listener;
 pub mod graph_physics;
