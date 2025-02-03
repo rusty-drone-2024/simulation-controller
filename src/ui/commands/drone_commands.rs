@@ -7,12 +7,7 @@ use crate::ui::components::{
 use bevy::prelude::*;
 
 use common_structs::leaf::LeafCommand;
-#[allow(unused)]
-use wg_2024::{
-    controller::{DroneCommand, DroneEvent},
-    network::NodeId,
-    packet::Packet,
-};
+use wg_2024::controller::DroneCommand;
 
 impl Drone {
     pub fn set_packet_drop_rate(&mut self, pdr: f32) -> Result<(), String> {
@@ -27,7 +22,6 @@ impl Drone {
     }
 }
 
-// TODO CHECK THAT THE RESULTING TOPOLOGY IS STILL CONNECTED
 pub fn crash(
     mut commands: Commands,
     mut drone_to_crash_query: Query<
@@ -107,7 +101,7 @@ fn is_still_connected(
         nodes.insert(node.id, node.neighbours.clone());
     }
     let mut visited = HashSet::new();
-    let mut stack = vec![nodes.keys().next().unwrap().clone()];
+    let mut stack = vec![*nodes.keys().next().unwrap()];
     while let Some(node_id) = stack.pop() {
         visited.insert(node_id);
         for neighbour in nodes.get(&node_id).unwrap() {

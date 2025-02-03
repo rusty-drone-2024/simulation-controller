@@ -135,12 +135,7 @@ fn remove_items(
     let edge_count =
         force_graph.data.get_graph().edge_count() - force_graph.data.get_graph().node_count();
     if edge_count > edges.iter().count() {
-        let indices: Vec<_> = force_graph
-            .data
-            .get_edges_indices()
-            .iter()
-            .cloned()
-            .collect();
+        let indices: Vec<_> = force_graph.data.get_edges_indices().to_vec();
         for (start, end) in indices.iter() {
             if !edges
                 .iter()

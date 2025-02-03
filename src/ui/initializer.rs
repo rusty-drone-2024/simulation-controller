@@ -1,12 +1,8 @@
-use super::components::{
-    Drone, DroneBundle, Edge, Leaf, LeafBundle, LeafType, Node, SelectionSpriteMarker, Text,
-};
-use bevy::prelude::*;
-use network_initializer::network::TypeInfo;
-use network_initializer::NetworkInitializer;
-
-use crate::ui::on_click::{observer_drone, observer_leaf};
+use super::components::{Edge, Node, SelectionSpriteMarker};
+use super::creator::{spawn_drone, spawn_leaf};
 use crate::ui::resources::{DroneListener, LeafListener};
+use bevy::prelude::*;
+use network_initializer::{network::TypeInfo, NetworkInitializer};
 use rand::Rng;
 use std::collections::HashSet;
 use wg_2024::network::NodeId;
@@ -38,8 +34,6 @@ fn initialize_sc(
     });
 
     let mut rng = rand::rng();
-    let scale_factor = Vec3::new(0.6, 0.6, 0.6);
-    let text_scale_factor = Vec3::new(0.8, 0.8, 0.8);
     let mut connection_set: HashSet<(NodeId, NodeId)> = HashSet::new();
 
     for (node_id, node_info) in network.topology.iter() {
@@ -50,124 +44,36 @@ fn initialize_sc(
         );
         match &node_info.type_info {
             TypeInfo::Drone(drone_info) => {
-                let entity_id = commands
-                    .spawn((
-                        DroneBundle {
-                            node: Node {
-                                id: *node_id,
-                                neighbours: node_info.neighbours.clone(),
-                                packet_channel: node_info.packet_in_channel.clone(),
-                                entity_id: Entity::PLACEHOLDER,
-                            },
-                            drone: Drone {
-                                pdr: drone_info.pdr,
-                                command_channel: drone_info.command_send_channel.clone(),
-                            },
-                        },
-                        Sprite::from_image(asset_server.load("drone.png")),
-                        Transform {
-                            translation: random_position,
-                            scale: scale_factor / 2.0,
-                            ..Default::default()
-                        },
-                    ))
-                    .id();
-                commands.entity(entity_id).insert(Node {
-                    id: *node_id,
-                    neighbours: node_info.neighbours.clone(),
-                    packet_channel: node_info.packet_in_channel.clone(),
-                    entity_id,
-                });
-                commands.entity(entity_id).observe(observer_drone);
-                commands.spawn((
-                    Text { entity_id },
-                    Text2d(format!("Drone {}", *node_id)),
-                    Transform {
-                        translation: Vec3::new(random_position.x, random_position.y + 15.0, 15.0),
-                        scale: text_scale_factor,
-                        ..Default::default()
-                    },
-                ));
+                spawn_drone(
+                    &mut commands,
+                    &asset_server,
+                    *node_id,
+                    node_info,
+                    drone_info,
+                    random_position,
+                );
             }
             TypeInfo::Client(leaf_info) => {
-                let entity_id = commands
-                    .spawn((
-                        LeafBundle {
-                            node: Node {
-                                id: *node_id,
-                                neighbours: node_info.neighbours.clone(),
-                                packet_channel: node_info.packet_in_channel.clone(),
-                                entity_id: Entity::PLACEHOLDER,
-                            },
-                            leaf: Leaf {
-                                command_channel: leaf_info.command_send_channel.clone(),
-                                leaf_type: LeafType::Client,
-                            },
-                        },
-                        Sprite::from_image(asset_server.load("client.png")),
-                        Transform {
-                            translation: random_position,
-                            scale: scale_factor,
-                            ..Default::default()
-                        },
-                    ))
-                    .id();
-                commands.entity(entity_id).insert(Node {
-                    id: *node_id,
-                    neighbours: node_info.neighbours.clone(),
-                    packet_channel: node_info.packet_in_channel.clone(),
-                    entity_id,
-                });
-                commands.entity(entity_id).observe(observer_leaf);
-                commands.spawn((
-                    Text { entity_id },
-                    Text2d(format!("Client {}", *node_id)),
-                    Transform {
-                        translation: Vec3::new(random_position.x, random_position.y + 15.0, 15.0),
-                        scale: text_scale_factor,
-                        ..Default::default()
-                    },
-                ));
+                spawn_leaf(
+                    &mut commands,
+                    &asset_server,
+                    *node_id,
+                    node_info,
+                    leaf_info,
+                    random_position,
+                    true,
+                );
             }
             TypeInfo::Server(leaf_info) => {
-                let entity_id = commands
-                    .spawn((
-                        LeafBundle {
-                            node: Node {
-                                id: *node_id,
-                                neighbours: node_info.neighbours.clone(),
-                                packet_channel: node_info.packet_in_channel.clone(),
-                                entity_id: Entity::PLACEHOLDER,
-                            },
-                            leaf: Leaf {
-                                command_channel: leaf_info.command_send_channel.clone(),
-                                leaf_type: LeafType::Server,
-                            },
-                        },
-                        Sprite::from_image(asset_server.load("server.png")),
-                        Transform {
-                            translation: random_position,
-                            scale: scale_factor,
-                            ..Default::default()
-                        },
-                    ))
-                    .id();
-                commands.entity(entity_id).insert(Node {
-                    id: *node_id,
-                    neighbours: node_info.neighbours.clone(),
-                    packet_channel: node_info.packet_in_channel.clone(),
-                    entity_id,
-                });
-                commands.entity(entity_id).observe(observer_leaf);
-                commands.spawn((
-                    Text { entity_id },
-                    Text2d(format!("Server {}", *node_id)),
-                    Transform {
-                        translation: Vec3::new(random_position.x, random_position.y + 15.0, 15.0),
-                        scale: text_scale_factor,
-                        ..Default::default()
-                    },
-                ));
+                spawn_leaf(
+                    &mut commands,
+                    &asset_server,
+                    *node_id,
+                    node_info,
+                    leaf_info,
+                    random_position,
+                    false,
+                );
             }
         }
         for neighbour_id in node_info.neighbours.iter() {
