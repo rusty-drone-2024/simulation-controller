@@ -12,11 +12,11 @@ impl MyForceGraph {
     pub fn new() -> Self {
         let mut item = MyForceGraph {
             data: ForceGraph::new(SimulationParameters {
-                force_charge: 9000.0,
-                force_spring: 0.3,
+                force_charge: 8000.0,
+                force_spring: 0.2,
                 force_max: 280.0,
                 node_speed: 7000.0,
-                damping_factor: 0.95,
+                damping_factor: 0.98,
             }),
             anchor_index: None,
         };
