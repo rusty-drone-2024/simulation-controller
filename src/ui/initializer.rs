@@ -1,6 +1,6 @@
 use super::components::{Edge, Node, SelectionSpriteMarker};
 use super::creator::{spawn_drone, spawn_leaf};
-use crate::ui::resources::{DroneListener, LeafListener};
+use crate::ui::resources::{DroneListener, LeafListener, Senders};
 use bevy::prelude::*;
 use network_initializer::{network::TypeInfo, NetworkInitializer};
 use rand::Rng;
@@ -31,6 +31,10 @@ fn initialize_sc(
     });
     commands.insert_resource(LeafListener {
         receiver: network.simulation_channels.leaf_event_listener,
+    });
+    commands.insert_resource(Senders {
+        drone_sender: network.simulation_channels.drone_event_sender,
+        _leaf_sender: network.simulation_channels.leaf_event_sender,
     });
 
     let mut rng = rand::rng();

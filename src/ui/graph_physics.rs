@@ -5,31 +5,19 @@ use force_graph::{ForceGraph, NodeData, SimulationParameters};
 #[derive(Resource)]
 pub struct MyForceGraph {
     pub data: ForceGraph<NodeData>,
-    pub anchor_index: Option<petgraph::stable_graph::NodeIndex<u8>>,
 }
 
 impl MyForceGraph {
     pub fn new() -> Self {
-        let mut item = MyForceGraph {
+        Self {
             data: ForceGraph::new(SimulationParameters {
-                force_charge: 8000.0,
-                force_spring: 0.2,
-                force_max: 280.0,
-                node_speed: 7000.0,
+                force_charge: 4000.0,
+                force_spring: 0.1,
+                force_max: 140.0,
+                node_speed: 4000.0,
                 damping_factor: 0.98,
             }),
-            anchor_index: None,
-        };
-        //Adding an anchor node in the
-        let idx = item.data.add_node(NodeData {
-            x: -300.0,
-            y: 0.0,
-            mass: 0.1,
-            is_anchor: true,
-            ..Default::default()
-        });
-        item.anchor_index = Some(idx);
-        item
+        }
     }
 }
 
@@ -48,20 +36,16 @@ impl Plugin for PhysicsPlugin {
 fn update_graph(
     mut commands: Commands,
     mut force_graph: ResMut<MyForceGraph>,
-    nodes: Query<(Entity, &Transform), Without<NodeForceGraphMarker>>,
+    nodes: Query<(Entity, &Transform), (With<Node>, Without<NodeForceGraphMarker>)>,
     edges: Query<(Entity, &Edge), Without<EdgeForceGraphMarker>>,
     nodes_in_graph: Query<(&Node, &NodeForceGraphMarker)>,
 ) {
-    let anchor_index = force_graph.anchor_index.unwrap();
     for (entity, transform) in nodes.iter() {
         let petgraph_index = force_graph.data.add_node(NodeData {
             x: transform.translation.x,
             y: transform.translation.y,
             ..Default::default()
         });
-        force_graph
-            .data
-            .add_edge(anchor_index, petgraph_index, Default::default());
         commands.entity(entity).insert(NodeForceGraphMarker {
             index: petgraph_index,
         });
@@ -124,9 +108,7 @@ fn remove_items(
             .cloned()
             .collect();
         for idx in indices.iter() {
-            if !nodes.iter().any(|node| node.index == *idx)
-                && idx != &force_graph.anchor_index.unwrap()
-            {
+            if !nodes.iter().any(|node| node.index == *idx) {
                 force_graph.data.remove_node(*idx);
             }
         }
@@ -140,7 +122,6 @@ fn remove_items(
             if !edges
                 .iter()
                 .any(|edge| edge.start_node == *start && edge.end_node == *end)
-                && start != &force_graph.anchor_index.unwrap()
             {
                 force_graph.data.remove_edge(*start, *end);
             }

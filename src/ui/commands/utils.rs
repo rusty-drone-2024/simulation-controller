@@ -1,77 +1,73 @@
-use super::super::components::{Drone, Leaf, Node};
+use bevy::prelude::*;
+
+use super::super::components::{Drone, Leaf};
+use bevy_trait_query::RegisterExt;
 use common_structs::leaf::LeafCommand;
 use crossbeam_channel::Sender;
 use wg_2024::{controller::DroneCommand, network::NodeId, packet::Packet};
 
-pub trait CommandChannel {
-    fn send_remove(&mut self, nghb_id: NodeId) -> Result<(), String>;
-    fn send_add(&mut self, nghb_id: NodeId, packet_channel: Sender<Packet>) -> Result<(), String>;
+#[bevy_trait_query::queryable]
+pub trait CommandSender {
+    fn add_sender(&mut self, nghb_id: NodeId, packet_channel: Sender<Packet>)
+        -> Result<(), String>;
+    fn remove_sender(&mut self, nghb_id: NodeId) -> Result<(), String>;
 }
 
-impl CommandChannel for Drone {
-    fn send_remove(&mut self, nghb_id: NodeId) -> Result<(), String> {
-        self.command_channel
-            .send(DroneCommand::RemoveSender(nghb_id))
-            .map_err(|err| err.to_string())
-    }
-
-    fn send_add(&mut self, nghb_id: NodeId, packet_channel: Sender<Packet>) -> Result<(), String> {
-        self.command_channel
+impl CommandSender for Drone {
+    fn add_sender(
+        &mut self,
+        nghb_id: NodeId,
+        packet_channel: Sender<Packet>,
+    ) -> Result<(), String> {
+        if let Err(err) = self
+            .command_channel
             .send(DroneCommand::AddSender(nghb_id, packet_channel))
-            .map_err(|err| err.to_string())
+        {
+            return Err(err.to_string());
+        }
+        Ok(())
+    }
+    fn remove_sender(&mut self, nghb_id: NodeId) -> Result<(), String> {
+        if let Err(err) = self
+            .command_channel
+            .send(DroneCommand::RemoveSender(nghb_id))
+        {
+            return Err(err.to_string());
+        }
+        Ok(())
     }
 }
 
-impl CommandChannel for Leaf {
-    fn send_remove(&mut self, nghb_id: NodeId) -> Result<(), String> {
-        self.command_channel
-            .send(LeafCommand::RemoveSender(nghb_id))
-            .map_err(|err| err.to_string())
-    }
-
-    fn send_add(&mut self, nghb_id: NodeId, packet_channel: Sender<Packet>) -> Result<(), String> {
-        self.command_channel
+impl CommandSender for Leaf {
+    fn add_sender(
+        &mut self,
+        nghb_id: NodeId,
+        packet_channel: Sender<Packet>,
+    ) -> Result<(), String> {
+        if let Err(err) = self
+            .command_channel
             .send(LeafCommand::AddSender(nghb_id, packet_channel))
-            .map_err(|err| err.to_string())
+        {
+            return Err(err.to_string());
+        }
+        Ok(())
+    }
+    fn remove_sender(&mut self, nghb_id: NodeId) -> Result<(), String> {
+        if let Err(err) = self
+            .command_channel
+            .send(LeafCommand::RemoveSender(nghb_id))
+        {
+            return Err(err.to_string());
+        }
+        Ok(())
     }
 }
 
-pub trait SenderOperations {
-    fn remove_sender(
-        command_channel: &mut impl CommandChannel,
-        node: &mut Node,
-        nghb_id: NodeId,
-    ) -> Result<(), String>;
+pub struct CommandPlugin;
 
-    fn add_sender(
-        command_channel: &mut impl CommandChannel,
-        node: &mut Node,
-        nghb_id: NodeId,
-    ) -> Result<(), String>;
-}
-
-impl SenderOperations for () {
-    fn remove_sender(
-        command_channel: &mut impl CommandChannel,
-        node: &mut Node,
-        nghb_id: NodeId,
-    ) -> Result<(), String> {
-        let res = command_channel.send_remove(nghb_id);
-        if res.is_ok() {
-            node.neighbours.remove(&nghb_id);
-        }
-        res
-    }
-
-    fn add_sender(
-        command_channel: &mut impl CommandChannel,
-        node: &mut Node,
-        nghb_id: NodeId,
-    ) -> Result<(), String> {
-        let res = command_channel.send_add(nghb_id, node.packet_channel.clone());
-        if res.is_ok() {
-            node.neighbours.insert(nghb_id);
-        }
-        res
+impl Plugin for CommandPlugin {
+    fn build(&self, app: &mut App) {
+        app.register_component_as::<dyn CommandSender, Drone>()
+            .register_component_as::<dyn CommandSender, Leaf>();
     }
 }

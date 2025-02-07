@@ -191,7 +191,10 @@ impl<UserNodeData, UserEdgeData> ForceGraph<UserNodeData, UserEdgeData> {
         if self.graph.node_count() == 0 {
             return;
         }
-
+    
+        let center_x = -200.0;
+        let center_y = 0.0;
+    
         for (n1_idx_i, n1_idx) in self.node_indices.iter().enumerate() {
             let mut edges = self.graph.neighbors(*n1_idx).detach();
             while let Some(n2_idx) = edges.next_node(&self.graph) {
@@ -199,7 +202,7 @@ impl<UserNodeData, UserEdgeData> ForceGraph<UserNodeData, UserEdgeData> {
                 let f = attract_nodes(n1, n2, &self.parameters);
                 n1.apply_force(f.0, f.1, dt, &self.parameters);
             }
-
+    
             for n2_idx in self.node_indices.iter().skip(n1_idx_i + 1) {
                 let (n1, n2) = self.graph.index_twice_mut(*n1_idx, *n2_idx);
                 let f = repel_nodes(n1, n2, &self.parameters);
@@ -210,9 +213,11 @@ impl<UserNodeData, UserEdgeData> ForceGraph<UserNodeData, UserEdgeData> {
                     n2.apply_force(-f.0, -f.1, dt, &self.parameters);
                 }
             }
-
+    
             let n1 = &mut self.graph[*n1_idx];
             if !n1.data.is_anchor {
+                let f_center = attract_to_center(n1, center_x, center_y, &self.parameters);
+                n1.apply_force(f_center.0, f_center.1, dt, &self.parameters);
                 n1.update(dt, &self.parameters);
             }
         }
@@ -303,7 +308,8 @@ fn attract_nodes<D>(n1: &Node<D>, n2: &Node<D>, parameters: &SimulationParameter
     dx /= distance;
     dy /= distance;
 
-    let strength = 1.0 * parameters.force_spring * distance * 0.5;
+    let multiplier = if n1.data.is_anchor || n2.data.is_anchor { 10.0 } else { 1.0 };
+    let strength = multiplier * parameters.force_spring * distance * 0.5;
     (dx * strength, dy * strength)
 }
 
@@ -322,5 +328,22 @@ fn repel_nodes<D>(n1: &Node<D>, n2: &Node<D>, parameters: &SimulationParameters)
 
     let distance_sqrd = distance * distance;
     let strength = -parameters.force_charge * ((n1.data.mass * n2.data.mass) / distance_sqrd);
+    (dx * strength, dy * strength)
+}
+
+fn attract_to_center<D>(node: &Node<D>, center_x: f32, center_y: f32, parameters: &SimulationParameters) -> (f32, f32) {
+    let mut dx = center_x - node.data.x;
+    let mut dy = center_y - node.data.y;
+
+    let distance = if dx == 0.0 && dy == 0.0 {
+        1.0
+    } else {
+        (dx * dx + dy * dy).sqrt()
+    };
+
+    dx /= distance;
+    dy /= distance;
+
+    let strength = parameters.force_spring * distance * 0.5;
     (dx * strength, dy * strength)
 }

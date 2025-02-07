@@ -12,6 +12,7 @@ network_initializer = { path = "../network-initializer" }
 
 bevy = { version =  "0.15.1", default-features = false, features = ["multi_threaded", "bevy_winit", "wayland", "bevy_sprite", "bevy_text", "bevy_ui", "default_font", "png", "bevy_audio","mp3"] }
 bevy_egui = { version = "0.32.0", default-features = true }
+bevy-trait-query = "0.7.0"
 
 crossbeam-channel = ">=0.5.13"
 rand = ">=0.8.5"

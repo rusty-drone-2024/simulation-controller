@@ -9,4 +9,5 @@ pub mod initializer;
 pub mod on_click;
 pub mod res_init;
 pub mod resources;
+pub mod utils;
 pub mod windows;
