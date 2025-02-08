@@ -1,6 +1,6 @@
-use crate::ui::commands::utils::CommandSender;
+use crate::ui::commands::utils::{is_connected, CommandSender};
 use crate::ui::components::{
-    AddDroneEvent, AddEdgeEvent, Edge, Leaf, Node, RmvEdgeEvent, SelectedMarker,
+    AddDroneEvent, AddEdgeEvent, Edge, Leaf, LeafType, Node, RmvEdgeEvent,
 };
 use crate::ui::creator::spawn_drone;
 use crate::ui::resources::Senders;
@@ -9,7 +9,7 @@ use bevy_trait_query::One;
 use crossbeam_channel::Sender;
 use network_initializer::network::TypeInfo;
 use network_initializer::utils::single_creator::create_drone;
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 use wg_2024::{network::NodeId, packet::Packet};
 
 use super::creator::spawn_edge;
@@ -34,28 +34,31 @@ pub fn add_drone(
     mut meshes: ResMut<Assets<Mesh>>,
     mut materials: ResMut<Assets<ColorMaterial>>,
     sender: Res<Senders>,
-    mut nodes: Query<(&mut Node, One<&mut dyn CommandSender>), Without<SelectedMarker>>,
+    mut nodes: Query<(&mut Node, Option<&Leaf>, One<&mut dyn CommandSender>)>,
 ) {
     for add_node in er_add_drone.read() {
-        let mut ngbs_packet_channels: HashMap<NodeId, Sender<Packet>> = HashMap::new();
-        let mut all_ids: Vec<NodeId> = Vec::new();
-        for (node, _sender) in nodes.iter() {
-            all_ids.push(node.id.clone());
+        let mut node_info: HashMap<NodeId, Sender<Packet>> = HashMap::new();
+        for (node, leaf, _sender) in nodes.iter() {
             for ngb_id in &add_node.ngbs {
                 if node.id == *ngb_id {
-                    // TODO will change to 1
-                    if node.neighbours.len() >= 4 {
-                        println!("Node {} has too many neighbours", node.id);
-                        return;
+                    if let Some(leaf) = leaf {
+                        if leaf.leaf_type == LeafType::Client {
+                            if node.neighbours.len() > 1 {
+                                println!("Client should be connected to at most 2 drones");
+                                return;
+                            }
+                        }
                     }
-                    ngbs_packet_channels.insert(node.id, node.packet_channel.clone());
+                    node_info.insert(node.id, node.packet_channel.clone());
                 }
             }
         }
-        if !(all_ids.contains(&add_node.ngbs[0]) && all_ids.contains(&add_node.ngbs[1])) {
+        if !(node_info.contains_key(&add_node.ngbs[0]) && node_info.contains_key(&add_node.ngbs[1]))
+        {
             println!("Nodes not present");
             return;
         }
+        let mut all_ids: Vec<NodeId> = nodes.iter().map(|(node, _, _)| node.id).collect();
         all_ids.sort();
         let mut node_id = 1;
         for id in all_ids {
@@ -70,7 +73,7 @@ pub fn add_drone(
             node_id,
             add_node.pdr,
             sender.drone_sender.clone(),
-            &ngbs_packet_channels,
+            &node_info,
         );
         if let TypeInfo::Drone(drone_info) = &node_info.type_info {
             spawn_drone(
@@ -85,7 +88,7 @@ pub fn add_drone(
             println!("Wrong NI behaviour");
             return;
         }
-        for (mut node, mut sender) in nodes.iter_mut() {
+        for (mut node, _leaf, mut sender) in nodes.iter_mut() {
             for ngb_id in &add_node.ngbs {
                 if node.id == *ngb_id {
                     if sender
@@ -101,6 +104,7 @@ pub fn add_drone(
                 }
             }
         }
+        println!("Drone spawned successfully");
     }
 }
 
@@ -110,40 +114,43 @@ pub fn add_edge(
     mut meshes: ResMut<Assets<Mesh>>,
     mut materials: ResMut<Assets<ColorMaterial>>,
     mut nodes: Query<(&mut Node, Option<&Leaf>, One<&mut dyn CommandSender>)>,
+    edges: Query<&Edge>,
 ) {
     for edge in er_add_edge.read() {
-        let mut all_ids: Vec<NodeId> = Vec::new();
-        let mut start_is_leaf = false;
-        let mut end_is_leaf = false;
-        for (node, leaf, _sender) in nodes.iter() {
-            //TODO change this to 1
-            if node.id == edge.start_node || node.id == edge.end_node {
-                if node.neighbours.len() >= 4 {
-                    println!("Node {} has too many neighbours", node.id);
-                    return;
-                }
-                if node.id == edge.start_node {
-                    start_is_leaf = leaf.is_some();
-                }
-                if node.id == edge.end_node {
-                    end_is_leaf = leaf.is_some();
-                }
-            }
-            if start_is_leaf && end_is_leaf {
-                println!("Can't connect two leaves together");
-                return;
-            }
-            all_ids.push(node.id.clone());
+        if edges.iter().any(|e| {
+            (e.start_node == edge.start_node && e.end_node == edge.end_node)
+                || (e.start_node == edge.end_node && e.end_node == edge.start_node)
+        }) {
+            println!("Edge already exists");
+            return;
         }
-        if !(all_ids.contains(&edge.start_node) && all_ids.contains(&edge.end_node)) {
+        let mut node_info: HashMap<NodeId, Sender<Packet>> = HashMap::new();
+        for (node, leaf, _sender) in nodes.iter() {
+            if node.id == edge.start_node || node.id == edge.end_node {
+                node_info.insert(node.id, node.packet_channel.clone());
+                if let Some(leaf) = leaf {
+                    if leaf.leaf_type == LeafType::Client {
+                        if node.neighbours.len() > 1 {
+                            println!("Client should be connected to at most 2 drones");
+                            return;
+                        }
+                    }
+                }
+            }
+        }
+        if !(node_info.contains_key(&edge.start_node) && node_info.contains_key(&edge.end_node)) {
             println!("Can't connect nodes if either of them is not present");
             return;
         }
         let mut inserted = (false, false);
+
         for (mut node, _leaf, mut sender) in nodes.iter_mut() {
             if node.id == edge.start_node {
                 if sender
-                    .add_sender(edge.end_node, node.packet_channel.clone())
+                    .add_sender(
+                        edge.end_node,
+                        node_info.get(&edge.end_node).unwrap().clone(),
+                    )
                     .is_ok()
                 {
                     node.neighbours.insert(edge.end_node);
@@ -155,7 +162,10 @@ pub fn add_edge(
             }
             if node.id == edge.end_node {
                 if sender
-                    .add_sender(edge.start_node, node.packet_channel.clone())
+                    .add_sender(
+                        edge.start_node,
+                        node_info.get(&edge.start_node).unwrap().clone(),
+                    )
                     .is_ok()
                 {
                     node.neighbours.insert(edge.start_node);
@@ -187,25 +197,38 @@ pub fn add_edge(
 pub fn remove_edge(
     mut commands: Commands,
     mut er_add_edge: EventReader<RmvEdgeEvent>,
-    mut nodes: Query<(&mut Node, One<&mut dyn CommandSender>)>,
+    mut nodes: Query<(&mut Node, Option<&Leaf>, One<&mut dyn CommandSender>)>,
     edge_query: Query<(Entity, &Edge)>,
 ) {
-    //TODO CHECK if graph is still connected
     for rmv_edge in er_add_edge.read() {
-        println!(
-            "Removing edge between {} and {}",
-            rmv_edge.start_node, rmv_edge.end_node
-        );
-        let mut all_ids: Vec<NodeId> = Vec::new();
-        for (node, _sender) in nodes.iter() {
-            all_ids.push(node.id.clone());
+        let mut topology: HashMap<NodeId, HashSet<NodeId>> = HashMap::new();
+        for (node, leaf, _sender) in nodes.iter() {
+            if let Some(leaf) = leaf {
+                if leaf.leaf_type == LeafType::Server {
+                    if node.neighbours.len() < 2 {
+                        println!("Server should always have at least 2 connections");
+                        return;
+                    }
+                }
+            }
+            topology.insert(node.id, node.neighbours.clone());
         }
-        if !(all_ids.contains(&rmv_edge.start_node) && all_ids.contains(&rmv_edge.end_node)) {
+        if !(topology.contains_key(&rmv_edge.start_node)
+            && topology.contains_key(&rmv_edge.end_node))
+        {
             println!("Can't remove edge if either of the nodes is not present");
             return;
         }
+        if !is_connected(
+            topology,
+            None,
+            Some((rmv_edge.start_node, rmv_edge.end_node)),
+        ) {
+            println!("Removing this edge will disconnect the network...aborting");
+            return;
+        }
         let mut removed = (false, false);
-        for (mut node, mut sender) in nodes.iter_mut() {
+        for (mut node, _leaf, mut sender) in nodes.iter_mut() {
             if node.id == rmv_edge.start_node {
                 if sender.remove_sender(rmv_edge.end_node).is_ok() {
                     node.neighbours.remove(&rmv_edge.end_node);
@@ -235,11 +258,10 @@ pub fn remove_edge(
                         && edge.end_node == rmv_edge.start_node)
                 {
                     commands.entity(entity).despawn();
+                    println!("Edge removed successfully");
                     return;
                 }
             }
-        } else {
-            println!("Error processing one or both nodes.");
         }
     }
 }

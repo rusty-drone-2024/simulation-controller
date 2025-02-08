@@ -127,6 +127,7 @@ fn window(
                                         && nghb_2 > 0
                                         && nghb_1 != nghb_2
                                     {
+                                        println!("Trying to spawn a new drone");
                                         ew_add_drone.send(AddDroneEvent {
                                             pdr,
                                             ngbs: vec![nghb_1, nghb_2],

@@ -68,7 +68,7 @@ pub struct Leaf {
     pub leaf_type: LeafType,
 }
 
-#[derive(Debug, Clone, Component)]
+#[derive(Debug, Clone, PartialEq, Component)]
 pub enum LeafType {
     Client,
     Server,
