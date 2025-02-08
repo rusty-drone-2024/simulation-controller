@@ -1,77 +1,102 @@
-use super::super::components::{Drone, Leaf, Node};
+use bevy::prelude::*;
+
+use crate::ui::components::{Drone, Leaf};
+use bevy_trait_query::RegisterExt;
 use common_structs::leaf::LeafCommand;
 use crossbeam_channel::Sender;
+use std::collections::{HashMap, HashSet};
 use wg_2024::{controller::DroneCommand, network::NodeId, packet::Packet};
 
-pub trait CommandChannel {
-    fn send_remove(&mut self, nghb_id: NodeId) -> Result<(), String>;
-    fn send_add(&mut self, nghb_id: NodeId, packet_channel: Sender<Packet>) -> Result<(), String>;
+#[bevy_trait_query::queryable]
+pub trait CommandSender {
+    fn add_sender(&mut self, nghb_id: NodeId, packet_channel: Sender<Packet>)
+        -> Result<(), String>;
+    fn remove_sender(&mut self, nghb_id: NodeId) -> Result<(), String>;
 }
 
-impl CommandChannel for Drone {
-    fn send_remove(&mut self, nghb_id: NodeId) -> Result<(), String> {
-        self.command_channel
-            .send(DroneCommand::RemoveSender(nghb_id))
-            .map_err(|err| err.to_string())
-    }
-
-    fn send_add(&mut self, nghb_id: NodeId, packet_channel: Sender<Packet>) -> Result<(), String> {
-        self.command_channel
+impl CommandSender for Drone {
+    fn add_sender(
+        &mut self,
+        nghb_id: NodeId,
+        packet_channel: Sender<Packet>,
+    ) -> Result<(), String> {
+        if let Err(err) = self
+            .command_channel
             .send(DroneCommand::AddSender(nghb_id, packet_channel))
-            .map_err(|err| err.to_string())
+        {
+            return Err(err.to_string());
+        }
+        Ok(())
+    }
+    fn remove_sender(&mut self, nghb_id: NodeId) -> Result<(), String> {
+        if let Err(err) = self
+            .command_channel
+            .send(DroneCommand::RemoveSender(nghb_id))
+        {
+            return Err(err.to_string());
+        }
+        Ok(())
     }
 }
 
-impl CommandChannel for Leaf {
-    fn send_remove(&mut self, nghb_id: NodeId) -> Result<(), String> {
-        self.command_channel
-            .send(LeafCommand::RemoveSender(nghb_id))
-            .map_err(|err| err.to_string())
-    }
-
-    fn send_add(&mut self, nghb_id: NodeId, packet_channel: Sender<Packet>) -> Result<(), String> {
-        self.command_channel
+impl CommandSender for Leaf {
+    fn add_sender(
+        &mut self,
+        nghb_id: NodeId,
+        packet_channel: Sender<Packet>,
+    ) -> Result<(), String> {
+        if let Err(err) = self
+            .command_channel
             .send(LeafCommand::AddSender(nghb_id, packet_channel))
-            .map_err(|err| err.to_string())
+        {
+            return Err(err.to_string());
+        }
+        Ok(())
+    }
+    fn remove_sender(&mut self, nghb_id: NodeId) -> Result<(), String> {
+        if let Err(err) = self
+            .command_channel
+            .send(LeafCommand::RemoveSender(nghb_id))
+        {
+            return Err(err.to_string());
+        }
+        Ok(())
     }
 }
 
-pub trait SenderOperations {
-    fn remove_sender(
-        command_channel: &mut impl CommandChannel,
-        node: &mut Node,
-        nghb_id: NodeId,
-    ) -> Result<(), String>;
+pub struct CommandPlugin;
 
-    fn add_sender(
-        command_channel: &mut impl CommandChannel,
-        node: &mut Node,
-        nghb_id: NodeId,
-    ) -> Result<(), String>;
+impl Plugin for CommandPlugin {
+    fn build(&self, app: &mut App) {
+        app.register_component_as::<dyn CommandSender, Drone>()
+            .register_component_as::<dyn CommandSender, Leaf>();
+    }
 }
 
-impl SenderOperations for () {
-    fn remove_sender(
-        command_channel: &mut impl CommandChannel,
-        node: &mut Node,
-        nghb_id: NodeId,
-    ) -> Result<(), String> {
-        let res = command_channel.send_remove(nghb_id);
-        if res.is_ok() {
-            node.neighbours.remove(&nghb_id);
+pub fn is_connected(
+    mut nodes: HashMap<u8, HashSet<u8>>,
+    removed_node: Option<u8>,
+    removed_edge: Option<(u8, u8)>,
+) -> bool {
+    if let Some(removed_id) = removed_node {
+        nodes.remove(&removed_id);
+        for (_, neighbours) in nodes.iter_mut() {
+            neighbours.remove(&removed_id);
         }
-        res
     }
-
-    fn add_sender(
-        command_channel: &mut impl CommandChannel,
-        node: &mut Node,
-        nghb_id: NodeId,
-    ) -> Result<(), String> {
-        let res = command_channel.send_add(nghb_id, node.packet_channel.clone());
-        if res.is_ok() {
-            node.neighbours.insert(nghb_id);
+    if let Some((removed_id1, removed_id2)) = removed_edge {
+        nodes.get_mut(&removed_id1).unwrap().remove(&removed_id2);
+        nodes.get_mut(&removed_id2).unwrap().remove(&removed_id1);
+    }
+    let mut visited = HashSet::new();
+    let mut stack = vec![*nodes.keys().next().unwrap()];
+    while let Some(node_id) = stack.pop() {
+        visited.insert(node_id);
+        for neighbour in nodes.get(&node_id).unwrap() {
+            if !visited.contains(neighbour) {
+                stack.push(*neighbour);
+            }
         }
-        res
     }
+    visited.len() == nodes.len()
 }

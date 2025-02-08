@@ -1,5 +1,4 @@
-use std::collections::{HashMap, HashSet};
-
+use crate::ui::commands::utils::is_connected;
 use crate::ui::components::{
     CrashMarker, Drone, Edge, Leaf, Node, SelectedMarker, SelectionSpriteMarker, Text,
 };
@@ -21,7 +20,7 @@ impl Drone {
         res
     }
 }
-
+//TODO MAJOR REFACTORING WITH SENDER TRAIT AND EVENT SYSTEM MAYBE?
 pub fn crash(
     mut commands: Commands,
     mut drone_to_crash_query: Query<
@@ -41,9 +40,12 @@ pub fn crash(
         Some((entity, drone, node)) => (entity, drone, node),
         None => return,
     };
-    if !is_still_connected(&drone_query, &leaf_query, node_crashing.id) {
+    /*
+    if !is_connected(&nodes_query, Some(node_crashing.id), None) {
+        println!("Crashing this drone will disconnect the network...aborting");
         return;
     }
+    */
     let res = drone_crashing
         .command_channel
         .send(DroneCommand::Crash)
@@ -86,29 +88,5 @@ pub fn crash(
             }
         }
     }
-}
-
-fn is_still_connected(
-    drone_query: &Query<(&Drone, &mut Node), (Without<SelectedMarker>, Without<Leaf>)>,
-    leaf_query: &Query<(&Leaf, &mut Node), Without<Drone>>,
-    removed_id: u8,
-) -> bool {
-    let mut nodes = HashMap::new();
-    for (_drone, node) in drone_query.iter() {
-        nodes.insert(node.id, node.neighbours.clone());
-    }
-    for (_leaf, node) in leaf_query.iter() {
-        nodes.insert(node.id, node.neighbours.clone());
-    }
-    let mut visited = HashSet::new();
-    let mut stack = vec![*nodes.keys().next().unwrap()];
-    while let Some(node_id) = stack.pop() {
-        visited.insert(node_id);
-        for neighbour in nodes.get(&node_id).unwrap() {
-            if neighbour != &removed_id && !visited.contains(neighbour) {
-                stack.push(*neighbour);
-            }
-        }
-    }
-    visited.len() == nodes.len()
+    println!("Crashed successfully");
 }

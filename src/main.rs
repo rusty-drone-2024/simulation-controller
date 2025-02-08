@@ -9,6 +9,7 @@ use ui::event_listener::EventListenerPlugin;
 use ui::graph_physics::PhysicsPlugin;
 use ui::initializer::SpawnTopologyPlugin;
 use ui::res_init::InitResourcesPlugin;
+use ui::utils::AddersPlugins;
 use ui::windows::WindowPlugin;
 
 fn main() {
@@ -23,5 +24,6 @@ fn main() {
         .add_plugins(PhysicsPlugin)
         .add_plugins(CommandsPlugin)
         .add_plugins(EventListenerPlugin)
+        .add_plugins(AddersPlugins)
         .run();
 }

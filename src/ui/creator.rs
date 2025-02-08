@@ -1,37 +1,8 @@
-use bevy::prelude::*;
-use crossbeam_channel::Sender;
-use std::collections::HashMap;
-
-use crate::ui::components::{
-    Drone, DroneBundle, Leaf, LeafBundle, LeafType, Node, SelectedMarker, Text,
-};
+use crate::ui::components::{Drone, DroneBundle, Edge, Leaf, LeafBundle, LeafType, Node, Text};
 use crate::ui::on_click::{observer_drone, observer_leaf};
-use network_initializer::network::{DroneInfo, LeafInfo, NodeInfo, TypeInfo};
-use network_initializer::utils::single_creator::create_drone;
-use wg_2024::{controller::DroneEvent, network::NodeId, packet::Packet};
-
-//TODO add to nbgh channels
-pub fn add_drone(
-    mut commands: Commands,
-    asset_server: Res<AssetServer>,
-    nodes: Query<&Node, Without<SelectedMarker>>,
-    node_id: NodeId,
-    pdr: f32,
-    event_send: Sender<DroneEvent>,
-    ngbs_packet_channels: HashMap<NodeId, Sender<Packet>>,
-) {
-    let node_info = create_drone(node_id, pdr, event_send, &ngbs_packet_channels);
-    if let TypeInfo::Drone(drone_info) = &node_info.type_info {
-        spawn_drone(
-            &mut commands,
-            &asset_server,
-            node_id,
-            &node_info,
-            drone_info,
-            Vec3::new(-200.0, 0.0, 0.0),
-        );
-    }
-}
+use bevy::prelude::*;
+use network_initializer::network::{DroneInfo, LeafInfo, NodeInfo};
+use wg_2024::network::NodeId;
 
 const TEXT_SCALE: Vec3 = Vec3::new(0.8, 0.8, 0.8);
 
@@ -141,5 +112,23 @@ pub fn spawn_leaf(
             scale: TEXT_SCALE,
             ..Default::default()
         },
+    ));
+}
+
+pub fn spawn_edge(
+    commands: &mut Commands,
+    start_node: NodeId,
+    end_node: NodeId,
+    meshes: &mut ResMut<Assets<Mesh>>,
+    materials: &mut ResMut<Assets<ColorMaterial>>,
+) {
+    commands.spawn((
+        Edge {
+            start_node,
+            end_node,
+        },
+        Transform::default(),
+        Mesh2d(meshes.add(Rectangle::new(1.0, 1.0))),
+        MeshMaterial2d(materials.add(Color::srgb(100.0, 100.0, 100.0))),
     ));
 }

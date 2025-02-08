@@ -68,7 +68,7 @@ pub struct Leaf {
     pub leaf_type: LeafType,
 }
 
-#[derive(Debug, Clone, Component)]
+#[derive(Debug, Clone, PartialEq, Component)]
 pub enum LeafType {
     Client,
     Server,
@@ -80,4 +80,22 @@ impl Display for LeafType {
             LeafType::Server => write!(f, "Server"),
         }
     }
+}
+
+#[derive(Event)]
+pub struct AddDroneEvent {
+    pub pdr: f32,
+    pub ngbs: Vec<NodeId>,
+}
+
+#[derive(Event)]
+pub struct AddEdgeEvent {
+    pub start_node: NodeId,
+    pub end_node: NodeId,
+}
+
+#[derive(Event)]
+pub struct RmvEdgeEvent {
+    pub start_node: NodeId,
+    pub end_node: NodeId,
 }
