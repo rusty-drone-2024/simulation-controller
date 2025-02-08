@@ -53,6 +53,7 @@ fn window(
     egui::SidePanel::right("Info")
         .resizable(false)
         .min_width(400.0)
+        .max_width(400.0)
         .frame(egui::Frame {
             fill: egui::Color32::from_rgb(102, 102, 204),
             stroke: egui::Stroke::new(4.0, egui::Color32::from_rgb(102, 102, 204)),

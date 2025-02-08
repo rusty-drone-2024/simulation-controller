@@ -6,8 +6,7 @@ edition = "2021"
 [dependencies]
 wg_2024 = { git = "https://github.com/WGL-2024/WGL_repo_2024.git", features = ["serialize"] }
 common_structs = { git = "https://github.com/rusty-drone-2024/common-structs.git" }
-#network_initializer = { git = "https://github.com/rusty-drone-2024/network-initializer.git" }
-network_initializer = { path = "../network-initializer" }
+network_initializer = { git = "https://github.com/rusty-drone-2024/network-initializer.git" }
 
 
 bevy = { version =  "0.15.1", default-features = false, features = ["multi_threaded", "bevy_winit", "wayland", "bevy_sprite", "bevy_text", "bevy_ui", "default_font", "png", "bevy_audio","mp3"] }
