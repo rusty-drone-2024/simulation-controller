@@ -19,3 +19,8 @@ pub struct Senders {
     pub drone_sender: Sender<DroneEvent>,
     pub _leaf_sender: Sender<LeafEvent>,
 }
+
+#[derive(Resource)]
+pub struct ModeConfig {
+    pub bypass_cheks: bool,
+}

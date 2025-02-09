@@ -3,6 +3,7 @@ use crate::ui::components::{
     AddDroneEvent, AddEdgeEvent, Edge, Leaf, LeafType, Node, RmvEdgeEvent,
 };
 use crate::ui::creator::spawn_drone;
+use crate::ui::resources::ModeConfig;
 use crate::ui::resources::Senders;
 use bevy::prelude::*;
 use bevy_trait_query::One;
@@ -35,18 +36,21 @@ pub fn add_drone(
     mut materials: ResMut<Assets<ColorMaterial>>,
     sender: Res<Senders>,
     mut nodes: Query<(&mut Node, Option<&Leaf>, One<&mut dyn CommandSender>)>,
+    mode: Res<ModeConfig>,
 ) {
     for add_node in er_add_drone.read() {
         let mut node_info: HashMap<NodeId, Sender<Packet>> = HashMap::new();
         for (node, leaf, _sender) in nodes.iter() {
+            if mode.bypass_cheks {
+                node_info.insert(node.id, node.packet_channel.clone());
+                continue;
+            }
             for ngb_id in &add_node.ngbs {
                 if node.id == *ngb_id {
                     if let Some(leaf) = leaf {
-                        if leaf.leaf_type == LeafType::Client {
-                            if node.neighbours.len() > 1 {
-                                println!("Client should be connected to at most 2 drones");
-                                return;
-                            }
+                        if leaf.leaf_type == LeafType::Client && node.neighbours.len() > 1 {
+                            println!("Client should be connected to at most 2 drones");
+                            return;
                         }
                     }
                     node_info.insert(node.id, node.packet_channel.clone());
@@ -115,8 +119,13 @@ pub fn add_edge(
     mut materials: ResMut<Assets<ColorMaterial>>,
     mut nodes: Query<(&mut Node, Option<&Leaf>, One<&mut dyn CommandSender>)>,
     edges: Query<&Edge>,
+    mode: Res<ModeConfig>,
 ) {
     for edge in er_add_edge.read() {
+        if edge.start_node == edge.end_node {
+            println!("Can't connect a node to itself");
+            return;
+        }
         if edges.iter().any(|e| {
             (e.start_node == edge.start_node && e.end_node == edge.end_node)
                 || (e.start_node == edge.end_node && e.end_node == edge.start_node)
@@ -126,14 +135,16 @@ pub fn add_edge(
         }
         let mut node_info: HashMap<NodeId, Sender<Packet>> = HashMap::new();
         for (node, leaf, _sender) in nodes.iter() {
+            if mode.bypass_cheks {
+                node_info.insert(node.id, node.packet_channel.clone());
+                continue;
+            }
             if node.id == edge.start_node || node.id == edge.end_node {
                 node_info.insert(node.id, node.packet_channel.clone());
                 if let Some(leaf) = leaf {
-                    if leaf.leaf_type == LeafType::Client {
-                        if node.neighbours.len() > 1 {
-                            println!("Client should be connected to at most 2 drones");
-                            return;
-                        }
+                    if leaf.leaf_type == LeafType::Client && node.neighbours.len() > 1 {
+                        println!("Client should be connected to at most 2 drones");
+                        return;
                     }
                 }
             }
@@ -199,19 +210,28 @@ pub fn remove_edge(
     mut er_add_edge: EventReader<RmvEdgeEvent>,
     mut nodes: Query<(&mut Node, Option<&Leaf>, One<&mut dyn CommandSender>)>,
     edge_query: Query<(Entity, &Edge)>,
+    mode: Res<ModeConfig>,
 ) {
     for rmv_edge in er_add_edge.read() {
-        let mut topology: HashMap<NodeId, HashSet<NodeId>> = HashMap::new();
+        if rmv_edge.start_node == rmv_edge.end_node {
+            println!("Can't remove self edge");
+            return;
+        }
+        let mut topology: HashMap<NodeId, (HashSet<NodeId>, bool)> = HashMap::new();
         for (node, leaf, _sender) in nodes.iter() {
-            if let Some(leaf) = leaf {
-                if leaf.leaf_type == LeafType::Server {
-                    if node.neighbours.len() < 2 {
-                        println!("Server should always have at least 2 connections");
-                        return;
-                    }
-                }
+            if mode.bypass_cheks {
+                topology.insert(node.id, (node.neighbours.clone(), true));
+                continue;
             }
-            topology.insert(node.id, node.neighbours.clone());
+            if let Some(leaf) = leaf {
+                if leaf.leaf_type == LeafType::Server && node.neighbours.len() <= 2 {
+                    println!("Server should always have at least 2 connections");
+                    return;
+                }
+                topology.insert(node.id, (node.neighbours.clone(), false));
+            } else {
+                topology.insert(node.id, (node.neighbours.clone(), true));
+            };
         }
         if !(topology.contains_key(&rmv_edge.start_node)
             && topology.contains_key(&rmv_edge.end_node))

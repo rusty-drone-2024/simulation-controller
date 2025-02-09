@@ -74,10 +74,17 @@ impl Plugin for CommandPlugin {
 }
 
 pub fn is_connected(
-    mut nodes: HashMap<u8, HashSet<u8>>,
+    nodes_to_add: HashMap<u8, (HashSet<u8>, bool)>,
     removed_node: Option<u8>,
     removed_edge: Option<(u8, u8)>,
 ) -> bool {
+    let mut nodes: HashMap<u8, HashSet<u8>> = HashMap::new();
+    for (node_id, (neighbours, is_drone)) in nodes_to_add {
+        if is_drone {
+            nodes.insert(node_id, neighbours);
+        }
+    }
+
     if let Some(removed_id) = removed_node {
         nodes.remove(&removed_id);
         for (_, neighbours) in nodes.iter_mut() {
