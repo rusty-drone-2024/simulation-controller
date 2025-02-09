@@ -12,7 +12,7 @@ use ui::res_init::InitResourcesPlugin;
 use ui::utils::AddersPlugins;
 use ui::windows::WindowPlugin;
 
-fn main() {
+pub fn loop_forever_sc() {
     App::new()
         .add_plugins(DefaultPlugins)
         .add_plugins(EguiPlugin)
