@@ -78,15 +78,12 @@ pub fn is_connected(
     removed_node: Option<u8>,
     removed_edge: Option<(u8, u8)>,
 ) -> bool {
-    // Remove the node and its connections if specified
     if let Some(removed_id) = removed_node {
         nodes.remove(&removed_id);
         for neighbors in nodes.values_mut() {
             neighbors.remove(&removed_id);
         }
     }
-
-    // Remove the specified edge if provided
     if let Some((removed_id1, removed_id2)) = removed_edge {
         if let Some(neighbors) = nodes.get_mut(&removed_id1) {
             neighbors.remove(&removed_id2);
@@ -95,19 +92,13 @@ pub fn is_connected(
             neighbors.remove(&removed_id1);
         }
     }
-
-    // Handle empty graph case
     if nodes.is_empty() {
         return true;
     }
 
     let mut visited = HashSet::new();
-
-    // Pick any starting node
     let start_node = *nodes.keys().next().unwrap();
     let mut stack = vec![start_node];
-
-    // DFS loop
     while let Some(node_id) = stack.pop() {
         if visited.insert(node_id) {
             // Visit all unvisited neighbors
@@ -120,8 +111,5 @@ pub fn is_connected(
             }
         }
     }
-    println!("{:?}", visited);
-    println!("{:?}", nodes);
-    // Check if all nodes were visited
     visited.len() == nodes.len()
 }
