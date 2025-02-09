@@ -1,6 +1,8 @@
 use crate::ui::components::{
-    AddDroneEvent, AddEdgeEvent, CrashMarker, Drone, Leaf, Node, RmvEdgeEvent, SelectedMarker,
+    AddDroneEvent, AddEdgeEvent, CrashMarker, Drone, Leaf, LeafType::*, Node, RmvEdgeEvent,
+    SelectedMarker,
 };
+use crate::ui::event_listener::DisplayedInfo;
 use bevy::prelude::*;
 use bevy_egui::*;
 
@@ -49,6 +51,7 @@ fn window(
     mut selected_state: ResMut<SelectedUiState>,
     mut query_drone: Query<(Entity, &Node, &mut Drone), (With<SelectedMarker>, Without<Leaf>)>,
     query_leaf: Query<(&Node, &Leaf), (With<SelectedMarker>, Without<Drone>)>,
+    info: Res<DisplayedInfo>,
 ) {
     egui::SidePanel::right("Info")
         .resizable(false)
@@ -141,17 +144,17 @@ fn window(
                 );
                 ui.add_space(10.0);
             });
-
             ui.add_space(10.0);
-            //
+
             // NODE PART OF THE UI WINDOW
-            //
             frame_style.show(ui, |ui| {
                 let available_size = ui.available_size();
                 egui::ScrollArea::vertical()
                     .max_height(available_size.y)
                     .show(ui, |ui| {
                         ui.add_space(10.0);
+
+                        // SELECTED NODE IS DRONE
                         if query_drone.iter().count() > 0 {
                             for (entity, node, mut drone) in query_drone.iter_mut() {
                                 ui.with_layout(egui::Layout::top_down(egui::Align::Center), |ui| {
@@ -184,11 +187,60 @@ fn window(
                                 });
                                 ui.add_space(10.0);
                                 ui.separator();
+
+                                // Drone info
                                 ui.separator();
                                 ui.heading("Infos:");
-                                //TODO: Add more infos
-                                ui.add_space(100.0);
-                                // END TODO
+                                ui.add_space(10.0);
+                                ui.horizontal(|ui| {
+                                    ui.add_space(6.0);
+                                    ui.label(format!(
+                                        "Packets sent: {}",
+                                        info.drone[&node.id].packets_sent
+                                    ));
+                                    ui.add_space(80.0);
+                                    ui.label(format!(
+                                        "Packets shortcutted: {}",
+                                        info.drone[&node.id].packets_shortcutted
+                                    ));
+                                });
+                                ui.horizontal(|ui| {
+                                    ui.add_space(6.0);
+                                    ui.label(format!(
+                                        "Bytes sent: {}",
+                                        info.drone[&node.id].data_sent
+                                    ));
+                                    ui.add_space(86.0);
+                                    ui.label(format!(
+                                        "Bytes dropped: {}",
+                                        info.drone[&node.id].data_dropped
+                                    ));
+                                });
+                                ui.horizontal(|ui| {
+                                    ui.add_space(6.0);
+                                    ui.label(format!(
+                                        "Latency: {} ms",
+                                        info.drone[&node.id].latency
+                                    ));
+                                });
+
+                                ui.separator();
+                                ui.horizontal(|ui| {
+                                    ui.add_space(6.0);
+                                    ui.label(format!(
+                                        "Faulty packets sent: {}",
+                                        info.drone[&node.id].faulty_packets_sent
+                                    ));
+                                    ui.add_space(20.0);
+                                    ui.label(format!(
+                                        "Number of fouls: {}",
+                                        info.drone[&node.id].fouls
+                                    ));
+                                });
+
+                                ui.add_space(10.0);
+                                // Drone info end
+
                                 ui.add_space(10.0);
                                 ui.separator();
                                 ui.separator();
@@ -246,7 +298,7 @@ fn window(
                                             .clicked()
                                         {
                                             println!(
-                                                "Trying to crash the drone with id: {:?}",
+                                                "Trying to crash the drone (id): {:?}",
                                                 node.id
                                             );
                                             commands.entity(entity).insert(CrashMarker);
@@ -254,18 +306,41 @@ fn window(
                                     },
                                 );
                             }
+                        // SELECTED NODE IS LEAF
                         } else if query_leaf.iter().count() > 0 {
                             for (node, leaf) in query_leaf.iter() {
-                                ui.with_layout(egui::Layout::top_down(egui::Align::Center), |ui| {
-                                    ui.heading(format!(
-                                        "{} with id: {:?}",
-                                        leaf.leaf_type, node.id
-                                    ));
-                                    ui.add_space(10.0);
+                                // LEAF IS CLIENT
+                                if leaf.leaf_type == Client {
+                                    ui.with_layout(
+                                        egui::Layout::top_down(egui::Align::Center),
+                                        |ui| {
+                                            ui.heading(format!("Client with id: {:?}", node.id));
+                                            ui.add_space(10.0);
+                                            ui.separator();
+                                            ui.add_space(10.0);
+                                        },
+                                    );
+                                    ui.label(format!("Neighbors: {:?}", node.neighbours));
+                                // LEAF IS SERVER
+                                } else if leaf.leaf_type == Server {
+                                    ui.with_layout(
+                                        egui::Layout::top_down(egui::Align::Center),
+                                        |ui| {
+                                            ui.heading(format!("Server with id: {:?}", node.id));
+                                            ui.add_space(10.0);
+                                            ui.separator();
+                                            ui.add_space(10.0);
+                                        },
+                                    );
+                                    ui.label(format!("Neighbors: {:?}", node.neighbours));
+
                                     ui.separator();
+                                    ui.separator();
+
+                                    // Server info
+                                    ui.heading("Infos:");
                                     ui.add_space(10.0);
-                                });
-                                ui.label(format!("Neighbors: {:?}", node.neighbours));
+                                };
                             }
                         } else {
                             ui.with_layout(egui::Layout::top_down(egui::Align::Center), |ui| {

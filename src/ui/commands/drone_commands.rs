@@ -1,12 +1,12 @@
-use crate::ui::commands::utils::is_connected;
+use crate::ui::commands::utils::{is_connected, CommandSender};
 use crate::ui::components::{
-    CrashMarker, Drone, Edge, Leaf, Node, SelectedMarker, SelectionSpriteMarker, Text,
+    CrashMarker, Drone, Edge, Leaf, LeafType, Node, SelectedMarker, SelectionSpriteMarker, Text,
 };
-
+use crate::ui::resources::ModeConfig;
 use bevy::prelude::*;
-
-use common_structs::leaf::LeafCommand;
-use wg_2024::controller::DroneCommand;
+use bevy_trait_query::One;
+use std::collections::{HashMap, HashSet};
+use wg_2024::{controller::DroneCommand, network::NodeId};
 
 impl Drone {
     pub fn set_packet_drop_rate(&mut self, pdr: f32) -> Result<(), String> {
@@ -20,59 +20,71 @@ impl Drone {
         res
     }
 }
-//TODO MAJOR REFACTORING WITH SENDER TRAIT AND EVENT SYSTEM MAYBE?
+
 pub fn crash(
     mut commands: Commands,
     mut drone_to_crash_query: Query<
         (Entity, &Drone, &mut Node),
         (With<SelectedMarker>, With<CrashMarker>),
     >,
-    mut drone_query: Query<(&Drone, &mut Node), (Without<SelectedMarker>, Without<Leaf>)>,
-    mut leaf_query: Query<(&Leaf, &mut Node), Without<Drone>>,
-    mut selected_sprite_query: Query<
-        &mut Visibility,
-        (With<SelectionSpriteMarker>, Without<Drone>, Without<Leaf>),
+    mut nodes_query: Query<
+        (&mut Node, Option<&Leaf>, One<&mut dyn CommandSender>),
+        Without<SelectedMarker>,
     >,
+    mut selected_sprite_query: Query<&mut Visibility, (With<SelectionSpriteMarker>, Without<Node>)>,
     edge_query: Query<(Entity, &Edge)>,
     text_query: Query<(Entity, &Text)>,
+    mode: Res<ModeConfig>,
 ) {
     let (entity, drone_crashing, node_crashing) = match drone_to_crash_query.iter_mut().next() {
         Some((entity, drone, node)) => (entity, drone, node),
         None => return,
     };
-    /*
-    if !is_connected(&nodes_query, Some(node_crashing.id), None) {
-        println!("Crashing this drone will disconnect the network...aborting");
+    let mut topology: HashMap<NodeId, (HashSet<NodeId>, bool)> = HashMap::new();
+    for (node, leaf, _sender) in nodes_query.iter() {
+        if mode.bypass_cheks {
+            topology.insert(node.id, (node.neighbours.clone(), true));
+            continue;
+        }
+        if let Some(leaf) = leaf {
+            topology.insert(node.id, (node.neighbours.clone(), false));
+            for ngb_id in &node_crashing.neighbours {
+                if node.id == *ngb_id
+                    && leaf.leaf_type == LeafType::Server
+                    && node.neighbours.len() <= 2
+                {
+                    println!("Aborting crash: Server should always have at least 2 connections");
+                    commands.entity(entity).remove::<CrashMarker>();
+                    return;
+                }
+            }
+        } else {
+            topology.insert(node.id, (node.neighbours.clone(), true));
+        };
+    }
+    topology.insert(node_crashing.id, (node_crashing.neighbours.clone(), true));
+    if !is_connected(topology, Some(node_crashing.id), None) {
+        println!("Aborting crash: Crashing this drone will disconnect the network...aborting");
+        commands.entity(entity).remove::<CrashMarker>();
         return;
     }
-    */
     let res = drone_crashing
         .command_channel
         .send(DroneCommand::Crash)
         .map_err(|err| err.to_string());
     if res.is_ok() {
-        for (drone, mut node) in drone_query.iter_mut() {
+        //Sending remove sender command to neighbours
+        for (mut node, _leaf, mut sender) in nodes_query.iter_mut() {
             if node.neighbours.contains(&node_crashing.id) {
-                let res = drone
-                    .command_channel
-                    .send(DroneCommand::RemoveSender(node_crashing.id))
-                    .map_err(|err| err.to_string());
+                let res = sender.remove_sender(node_crashing.id);
                 if res.is_ok() {
                     node.neighbours.remove(&node_crashing.id);
+                } else {
+                    println!("Error removing sender from node");
                 }
             }
         }
-        for (leaf, mut node) in leaf_query.iter_mut() {
-            if node.neighbours.contains(&node_crashing.id) {
-                let res = leaf
-                    .command_channel
-                    .send(LeafCommand::RemoveSender(node_crashing.id))
-                    .map_err(|err| err.to_string());
-                if res.is_ok() {
-                    node.neighbours.remove(&node_crashing.id);
-                }
-            }
-        }
+        //Despawning the drone related entities
         commands.entity(entity).despawn();
         for mut visibility in selected_sprite_query.iter_mut() {
             *visibility = Visibility::Hidden;
