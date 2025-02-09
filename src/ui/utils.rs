@@ -3,8 +3,8 @@ use crate::ui::components::{
     AddDroneEvent, AddEdgeEvent, Edge, Leaf, LeafType, Node, RmvEdgeEvent,
 };
 use crate::ui::creator::spawn_drone;
-use crate::ui::resources::ModeConfig;
 use crate::ui::resources::Senders;
+use crate::ui::settings::ModeConfig;
 use bevy::prelude::*;
 use bevy_trait_query::One;
 use crossbeam_channel::Sender;
@@ -15,9 +15,9 @@ use wg_2024::{network::NodeId, packet::Packet};
 
 use super::creator::spawn_edge;
 
-pub struct AddersPlugins;
+pub struct UtilsPlugins;
 
-impl Plugin for AddersPlugins {
+impl Plugin for UtilsPlugins {
     fn build(&self, app: &mut App) {
         app.add_event::<AddDroneEvent>();
         app.add_event::<AddEdgeEvent>();
@@ -63,7 +63,7 @@ pub fn add_drone(
             return;
         }
         let mut all_ids: Vec<NodeId> = nodes.iter().map(|(node, _, _)| node.id).collect();
-        all_ids.sort();
+        all_ids.sort_unstable();
         let mut node_id = 1;
         for id in all_ids {
             if id == node_id {
@@ -92,7 +92,7 @@ pub fn add_drone(
             println!("Wrong NI behaviour");
             return;
         }
-        for (mut node, _leaf, mut sender) in nodes.iter_mut() {
+        for (mut node, _leaf, mut sender) in &mut nodes {
             for ngb_id in &add_node.ngbs {
                 if node.id == *ngb_id {
                     if sender
@@ -155,7 +155,7 @@ pub fn add_edge(
         }
         let mut inserted = (false, false);
 
-        for (mut node, _leaf, mut sender) in nodes.iter_mut() {
+        for (mut node, _leaf, mut sender) in &mut nodes {
             if node.id == edge.start_node {
                 if sender
                     .add_sender(
@@ -248,7 +248,7 @@ pub fn remove_edge(
             return;
         }
         let mut removed = (false, false);
-        for (mut node, _leaf, mut sender) in nodes.iter_mut() {
+        for (mut node, _leaf, mut sender) in &mut nodes {
             if node.id == rmv_edge.start_node {
                 if sender.remove_sender(rmv_edge.end_node).is_ok() {
                     node.neighbours.remove(&rmv_edge.end_node);

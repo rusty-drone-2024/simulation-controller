@@ -2,7 +2,7 @@ use crate::ui::commands::utils::{is_connected, CommandSender};
 use crate::ui::components::{
     CrashMarker, Drone, Edge, Leaf, LeafType, Node, SelectedMarker, SelectionSpriteMarker, Text,
 };
-use crate::ui::resources::ModeConfig;
+use crate::ui::settings::ModeConfig;
 use bevy::prelude::*;
 use bevy_trait_query::One;
 use std::collections::{HashMap, HashSet};
@@ -36,9 +36,9 @@ pub fn crash(
     text_query: Query<(Entity, &Text)>,
     mode: Res<ModeConfig>,
 ) {
-    let (entity, drone_crashing, node_crashing) = match drone_to_crash_query.iter_mut().next() {
-        Some((entity, drone, node)) => (entity, drone, node),
-        None => return,
+    let Some((entity, drone_crashing, node_crashing)) = drone_to_crash_query.iter_mut().next()
+    else {
+        return;
     };
     let mut topology: HashMap<NodeId, (HashSet<NodeId>, bool)> = HashMap::new();
     for (node, leaf, _sender) in nodes_query.iter() {
@@ -74,7 +74,7 @@ pub fn crash(
         .map_err(|err| err.to_string());
     if res.is_ok() {
         //Sending remove sender command to neighbours
-        for (mut node, _leaf, mut sender) in nodes_query.iter_mut() {
+        for (mut node, _leaf, mut sender) in &mut nodes_query {
             if node.neighbours.contains(&node_crashing.id) {
                 let res = sender.remove_sender(node_crashing.id);
                 if res.is_ok() {
@@ -86,7 +86,7 @@ pub fn crash(
         }
         //Despawning the drone related entities
         commands.entity(entity).despawn();
-        for mut visibility in selected_sprite_query.iter_mut() {
+        for mut visibility in &mut selected_sprite_query {
             *visibility = Visibility::Hidden;
         }
         for (entity, edge) in edge_query.iter() {

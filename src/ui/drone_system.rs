@@ -11,7 +11,7 @@ impl Plugin for DronePlugin {
 }
 
 fn drone_color(mut query: Query<(&Node, &mut Sprite), Without<Leaf>>) {
-    for (node, mut sprite) in query.iter_mut() {
+    for (node, mut sprite) in &mut query {
         let colors = int_to_rgb(node.packet_channel.len());
         sprite.color = Color::srgb(colors.0, colors.1, colors.2);
     }
@@ -40,12 +40,12 @@ fn update_selected_position(
     mut selector_query: Query<(&mut Transform, &mut Visibility), With<SelectionSpriteMarker>>,
 ) {
     if node_query.iter().count() == 0 {
-        for (_transform, mut visibility) in selector_query.iter_mut() {
+        for (_transform, mut visibility) in &mut selector_query {
             *visibility = Visibility::Hidden;
         }
     }
     for node_transform in node_query.iter() {
-        for (mut transform, _visibility) in selector_query.iter_mut() {
+        for (mut transform, _visibility) in &mut selector_query {
             transform.translation = node_transform.translation;
         }
     }

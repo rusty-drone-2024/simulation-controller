@@ -87,7 +87,7 @@ pub fn is_connected(
 
     if let Some(removed_id) = removed_node {
         nodes.remove(&removed_id);
-        for (_, neighbours) in nodes.iter_mut() {
+        for neighbours in nodes.values_mut() {
             neighbours.remove(&removed_id);
         }
     }

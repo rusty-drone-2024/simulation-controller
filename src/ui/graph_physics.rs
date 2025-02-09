@@ -1,6 +1,6 @@
 use super::components::{Edge, EdgeForceGraphMarker, Node, NodeForceGraphMarker, Text};
 use bevy::prelude::*;
-use force_graph::{ForceGraph, NodeData, SimulationParameters};
+use force_graph::{EdgeData, ForceGraph, NodeData, SimulationParameters};
 
 #[derive(Resource)]
 pub struct MyForceGraph {
@@ -70,7 +70,7 @@ fn update_graph(
             {
                 force_graph
                     .data
-                    .add_edge(start_node, end_node, Default::default());
+                    .add_edge(start_node, end_node, EdgeData::default());
             }
             commands.entity(entity).insert(EdgeForceGraphMarker {
                 start_node,
@@ -86,7 +86,7 @@ fn update_positions(
     mut nodes: Query<(&mut Transform, &NodeForceGraphMarker), With<Node>>,
 ) {
     force_graph.data.update(time.delta_secs());
-    for (mut transform, petgraph) in nodes.iter_mut() {
+    for (mut transform, petgraph) in &mut nodes {
         if force_graph.data.contains_node(petgraph.index) {
             let (x, y) = force_graph.data.get_node_position(petgraph.index);
             transform.translation = Vec3::new(x, y, 0.0);
@@ -105,9 +105,9 @@ fn remove_items(
             .data
             .get_nodes_indices()
             .iter()
-            .cloned()
+            .copied()
             .collect();
-        for idx in indices.iter() {
+        for idx in &indices {
             if !nodes.iter().any(|node| node.index == *idx) {
                 force_graph.data.remove_node(*idx);
             }
@@ -117,8 +117,8 @@ fn remove_items(
     let edge_count =
         force_graph.data.get_graph().edge_count() - force_graph.data.get_graph().node_count();
     if edge_count > edges.iter().count() {
-        let indices: Vec<_> = force_graph.data.get_edges_indices().to_vec();
-        for (start, end) in indices.iter() {
+        let indices: Vec<_> = force_graph.data.get_edges_indices().clone();
+        for (start, end) in &indices {
             if !edges
                 .iter()
                 .any(|edge| edge.start_node == *start && edge.end_node == *end)
@@ -133,8 +133,8 @@ fn update_text_positions(
     mut query_text: Query<(&Text, &mut Transform)>,
     query_node: Query<(Entity, &Transform), (With<Node>, Without<Text>)>,
 ) {
-    for (text, mut transform) in query_text.iter_mut() {
-        for (entity, node_transform) in query_node.iter() {
+    for (text, mut transform) in &mut query_text {
+        for (entity, node_transform) in &query_node {
             if entity == text.entity_id {
                 transform.translation = Vec3::new(
                     node_transform.translation.x,

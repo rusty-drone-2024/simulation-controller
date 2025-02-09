@@ -2,6 +2,7 @@ use super::components::{Edge, Node, SelectionSpriteMarker};
 use super::creator::{spawn_drone, spawn_leaf};
 use crate::ui::resources::NetworkResource;
 use crate::ui::resources::{DroneListener, LeafListener, Senders};
+use crate::ui::settings::MusicResource;
 use bevy::prelude::*;
 use network_initializer::network::TypeInfo;
 use rand::Rng;
@@ -12,9 +13,9 @@ pub struct SpawnTopologyPlugin;
 
 impl Plugin for SpawnTopologyPlugin {
     fn build(&self, app: &mut App) {
-        app.add_systems(Startup, spawn_soundtrack)
-            .add_systems(Startup, initialize_sc)
-            .add_systems(Startup, initialize_items)
+        app.add_systems(PreStartup, spawn_soundtrack)
+            .add_systems(PreStartup, initialize_sc)
+            .add_systems(PreStartup, initialize_items)
             .add_systems(Update, update_edges);
     }
 }
@@ -44,7 +45,7 @@ fn initialize_sc(
     let mut rng = rand::rng();
     let mut connection_set: HashSet<(NodeId, NodeId)> = HashSet::new();
 
-    for (node_id, node_info) in network.data.topology.iter() {
+    for (node_id, node_info) in &network.data.topology {
         let random_position = Vec3::new(
             rng.random_range(-200.0..100.0),
             rng.random_range(-150.0..150.0),
@@ -84,7 +85,7 @@ fn initialize_sc(
                 );
             }
         }
-        for neighbour_id in node_info.neighbours.iter() {
+        for neighbour_id in &node_info.neighbours {
             if !connection_set.contains(&(*node_id, *neighbour_id)) {
                 commands.spawn((
                     Edge {
@@ -119,22 +120,29 @@ fn initialize_items(mut commands: Commands, asset_server: Res<AssetServer>) {
     ));
 }
 
-fn spawn_soundtrack(mut commands: Commands, asset_server: Res<AssetServer>) {
-    commands.spawn((
-        AudioPlayer::new(asset_server.load("soundtrack.mp3")),
-        PlaybackSettings {
-            mode: bevy::audio::PlaybackMode::Loop,
-            volume: bevy::audio::Volume::new(0.5),
-            ..Default::default()
-        },
-    ));
+fn spawn_soundtrack(
+    mut commands: Commands,
+    asset_server: Res<AssetServer>,
+    mut music: ResMut<MusicResource>,
+) {
+    let entity = commands
+        .spawn((
+            AudioPlayer::new(asset_server.load("soundtrack.mp3")),
+            PlaybackSettings {
+                mode: bevy::audio::PlaybackMode::Loop,
+                volume: bevy::audio::Volume::new(0.5),
+                ..Default::default()
+            },
+        ))
+        .id();
+    music.entity = Some(entity);
 }
 
 fn update_edges(
     mut edge_query: Query<(&Edge, &mut Transform)>,
     node_query: Query<(&Node, &Transform), Without<Edge>>,
 ) {
-    for (edge, mut edge_transform) in edge_query.iter_mut() {
+    for (edge, mut edge_transform) in &mut edge_query {
         let start_node_transform = node_query
             .iter()
             .find(|(node, _)| node.id == edge.start_node)

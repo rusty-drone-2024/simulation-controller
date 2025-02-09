@@ -22,11 +22,6 @@ pub struct Senders {
 }
 
 #[derive(Resource)]
-pub struct ModeConfig {
-    pub bypass_cheks: bool,
-}
-
-#[derive(Resource)]
 pub struct NetworkResource {
     pub data: Network,
 }
