@@ -45,7 +45,7 @@ pub fn spawn_drone(
     commands.entity(entity_id).observe(observer_drone);
     commands.spawn((
         Text { entity_id },
-        Text2d(format!("Drone {}", node_id)),
+        Text2d(format!("Drone {node_id}")),
         Transform {
             translation: Vec3::new(translation.x, translation.y + 15.0, 15.0),
             scale: TEXT_SCALE,
@@ -106,7 +106,7 @@ pub fn spawn_leaf(
     commands.entity(entity_id).observe(observer_leaf);
     commands.spawn((
         Text { entity_id },
-        Text2d(format!("{}{}", str, node_id)),
+        Text2d(format!("{str}{node_id}")),
         Transform {
             translation: Vec3::new(translation.x, translation.y + 15.0, 15.0),
             scale: TEXT_SCALE,

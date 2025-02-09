@@ -1,5 +1,5 @@
 use super::components::{Drone, Node, SelectedMarker};
-use super::windows::SelectedUiState;
+use super::window::SelectedUiState;
 
 use bevy::prelude::*;
 
@@ -16,11 +16,11 @@ pub fn observer_drone(
     for entity in last_selected_node_query.iter() {
         commands.entity(entity).remove::<SelectedMarker>();
     }
-    for (node, drone, transform) in to_select_node_query.iter_mut() {
+    for (node, drone, transform) in &mut to_select_node_query {
         if node.entity_id == entity {
             selected_state.pdr = Some(drone.pdr.clone().to_string());
             commands.entity(entity).insert(SelectedMarker);
-            for (mut selector, mut visibility) in selector_query.iter_mut() {
+            for (mut selector, mut visibility) in &mut selector_query {
                 selector.translation =
                     Vec3::new(transform.translation.x, transform.translation.y, -10.0);
                 *visibility = Visibility::Visible;
@@ -42,11 +42,11 @@ pub fn observer_leaf(
     for entity in last_selected_node_query.iter() {
         commands.entity(entity).remove::<SelectedMarker>();
     }
-    for (node, transform) in to_select_node_query.iter_mut() {
+    for (node, transform) in &mut to_select_node_query {
         if node.entity_id == entity {
             selected_state.pdr = None;
             commands.entity(entity).insert(SelectedMarker);
-            for (mut selector, mut visibility) in selector_query.iter_mut() {
+            for (mut selector, mut visibility) in &mut selector_query {
                 selector.translation =
                     Vec3::new(transform.translation.x, transform.translation.y, -10.0);
                 *visibility = Visibility::Visible;

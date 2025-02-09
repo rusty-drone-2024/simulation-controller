@@ -1,10 +1,11 @@
 use crate::ui::components::{
-    AddDroneEvent, AddEdgeEvent, CrashMarker, Drone, Leaf, LeafType::*, Node, RmvEdgeEvent,
-    SelectedMarker,
+    AddDroneEvent, AddEdgeEvent, CrashMarker, Drone, Leaf,
+    LeafType::{Client, Server},
+    Node, RmvEdgeEvent, SelectedMarker,
 };
 use crate::ui::event_listener::DisplayedInfo;
 use bevy::prelude::*;
-use bevy_egui::*;
+use bevy_egui::{egui, EguiContexts};
 
 pub struct WindowPlugin;
 
@@ -21,6 +22,7 @@ pub struct MainUiState {
     pub nbhg_1: Option<String>,
     pub nbhg_2: Option<String>,
 }
+
 #[derive(Resource, Debug)]
 pub struct SelectedUiState {
     pub pdr: Option<String>,
@@ -156,7 +158,7 @@ fn window(
 
                         // SELECTED NODE IS DRONE
                         if query_drone.iter().count() > 0 {
-                            for (entity, node, mut drone) in query_drone.iter_mut() {
+                            for (entity, node, mut drone) in &mut query_drone {
                                 ui.with_layout(egui::Layout::top_down(egui::Align::Center), |ui| {
                                     ui.heading(format!("Drone with id: {:?}", node.id));
                                     ui.add_space(10.0);

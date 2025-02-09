@@ -11,4 +11,4 @@ pub mod res_init;
 pub mod resources;
 pub mod settings;
 pub mod utils;
-pub mod windows;
+pub mod window;

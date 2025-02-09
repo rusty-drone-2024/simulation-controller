@@ -4,7 +4,7 @@ use bevy::prelude::*;
 
 use bevy::utils::HashMap;
 use common_structs::leaf::LeafEvent;
-use wg_2024::packet::PacketType::*;
+use wg_2024::packet::PacketType::{FloodRequest, MsgFragment};
 use wg_2024::{controller::DroneEvent, network::NodeId, packet::Packet};
 
 use super::components::Leaf;
@@ -103,7 +103,7 @@ fn listen_drones_events(
                         latency: 0,
                     });
                 if let MsgFragment(fragment) = p.pack_type {
-                    entry.data_dropped += fragment.length as u64
+                    entry.data_dropped += u64::from(fragment.length);
                 } else {
                     entry.fouls += 1;
                 }
@@ -133,26 +133,26 @@ fn listen_drones_events(
                     .0 += 1;
 
                 // Check for error in routing
-                node_query
+                if let Some(node) = node_query
                     .iter()
                     .find(|&node| node.id == p.routing_header.hops[p.routing_header.hop_index - 1])
-                    .map(|node| {
-                        if !node
-                            .neighbours
-                            .contains(&p.routing_header.hops[p.routing_header.hop_index])
-                        {
-                            entry.faulty_packets_sent += 1;
-                        }
-                    });
+                {
+                    if !node
+                        .neighbours
+                        .contains(&p.routing_header.hops[p.routing_header.hop_index])
+                    {
+                        entry.faulty_packets_sent += 1;
+                    }
+                };
                 // TODO: check for destination is drone
                 ////
                 if let MsgFragment(fragment) = p.pack_type {
-                    entry.data_sent += fragment.length as u64;
+                    entry.data_sent += u64::from(fragment.length);
                     entry
                         .neighbours
                         .entry(p.routing_header.hops[p.routing_header.hop_index])
                         .or_insert((0, 0))
-                        .1 += fragment.length as u64;
+                        .1 += u64::from(fragment.length);
                 }
             }
             DroneEvent::ControllerShortcut(p) => {
@@ -173,7 +173,7 @@ fn listen_drones_events(
                     entry.fouls += 1;
                 } else {
                     entry.packets_shortcutted += 1;
-                    shortcut(&node_query, p);
+                    shortcut(&node_query, &p);
                 }
             }
         }
@@ -209,7 +209,7 @@ fn listen_leaves_events(
     }
 }
 
-fn shortcut(node_query: &Query<&Node>, packet: Packet) {
+fn shortcut(node_query: &Query<&Node>, packet: &Packet) {
     let Some(dest) = &packet.routing_header.destination() else {
         return eprintln!("### SHORTCUT: NO DESTINATION");
     };
