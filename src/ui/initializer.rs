@@ -1,8 +1,9 @@
 use super::components::{Edge, Node, SelectionSpriteMarker};
 use super::creator::{spawn_drone, spawn_leaf};
+use crate::ui::resources::NetworkResource;
 use crate::ui::resources::{DroneListener, LeafListener, Senders};
 use bevy::prelude::*;
-use network_initializer::{network::TypeInfo, NetworkInitializer};
+use network_initializer::network::TypeInfo;
 use rand::Rng;
 use std::collections::HashSet;
 use wg_2024::network::NodeId;
@@ -23,24 +24,27 @@ fn initialize_sc(
     asset_server: Res<AssetServer>,
     mut meshes: ResMut<Assets<Mesh>>,
     mut materials: ResMut<Assets<ColorMaterial>>,
+    network: ResMut<NetworkResource>,
 ) {
-    let network =
-        NetworkInitializer::initialize_default_network_with_only_rusty_drone("config.toml");
     commands.insert_resource(DroneListener {
-        receiver: network.simulation_channels.drone_event_listener,
+        receiver: network
+            .data
+            .simulation_channels
+            .drone_event_listener
+            .clone(),
     });
     commands.insert_resource(LeafListener {
-        receiver: network.simulation_channels.leaf_event_listener,
+        receiver: network.data.simulation_channels.leaf_event_listener.clone(),
     });
     commands.insert_resource(Senders {
-        drone_sender: network.simulation_channels.drone_event_sender,
-        _leaf_sender: network.simulation_channels.leaf_event_sender,
+        drone_sender: network.data.simulation_channels.drone_event_sender.clone(),
+        _leaf_sender: network.data.simulation_channels.leaf_event_sender.clone(),
     });
 
     let mut rng = rand::rng();
     let mut connection_set: HashSet<(NodeId, NodeId)> = HashSet::new();
 
-    for (node_id, node_info) in network.topology.iter() {
+    for (node_id, node_info) in network.data.topology.iter() {
         let random_position = Vec3::new(
             rng.random_range(-200.0..100.0),
             rng.random_range(-150.0..150.0),

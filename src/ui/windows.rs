@@ -223,7 +223,7 @@ fn window(
                                         info.drone[&node.id].latency
                                     ));
                                 });
-                                
+
                                 ui.separator();
                                 ui.horizontal(|ui| {
                                     ui.add_space(6.0);
@@ -237,7 +237,7 @@ fn window(
                                         info.drone[&node.id].fouls
                                     ));
                                 });
-                                
+
                                 ui.add_space(10.0);
                                 // Drone info end
 
@@ -333,14 +333,13 @@ fn window(
                                         },
                                     );
                                     ui.label(format!("Neighbors: {:?}", node.neighbours));
-                                    
+
                                     ui.separator();
                                     ui.separator();
 
                                     // Server info
                                     ui.heading("Infos:");
                                     ui.add_space(10.0);
-
                                 };
                             }
                         } else {

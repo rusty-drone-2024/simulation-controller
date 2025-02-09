@@ -2,6 +2,7 @@ use bevy::prelude::*;
 
 use common_structs::leaf::LeafEvent;
 use crossbeam_channel::{Receiver, Sender};
+use network_initializer::network::Network;
 use wg_2024::controller::DroneEvent;
 
 #[derive(Resource)]
@@ -23,4 +24,9 @@ pub struct Senders {
 #[derive(Resource)]
 pub struct ModeConfig {
     pub bypass_cheks: bool,
+}
+
+#[derive(Resource)]
+pub struct NetworkResource {
+    pub data: Network,
 }

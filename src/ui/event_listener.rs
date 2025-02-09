@@ -1,4 +1,4 @@
-use crate::ui::components::{Node, LeafType};
+use crate::ui::components::{LeafType, Node};
 use crate::ui::resources::{DroneListener, LeafListener};
 use bevy::prelude::*;
 
@@ -30,6 +30,7 @@ pub struct DroneData {
     pub latency: u64,
 }
 
+#[allow(unused)]
 #[derive(Debug)]
 pub struct ClientData {
     pub packets_sent: Packets,
@@ -41,9 +42,9 @@ pub struct ClientData {
     pub avg_bytes_xmessage: u64,
     // Number of unpermitted actions executed
     pub fouls: u64,
-
 }
 
+#[allow(unused)]
 #[derive(Debug)]
 pub struct ServerData {
     pub packets_sent: Packets,
@@ -179,25 +180,26 @@ fn listen_drones_events(
     }
 }
 
-fn listen_leaves_events(leaf_listener: Res<LeafListener>, leaf_query: Query<(&Node, &Leaf)>, mut info: ResMut<DisplayedInfo>) {
+fn listen_leaves_events(
+    leaf_listener: Res<LeafListener>,
+    leaf_query: Query<(&Node, &Leaf)>,
+    mut info: ResMut<DisplayedInfo>,
+) {
     while let Ok(event) = leaf_listener.receiver.try_recv() {
         match event {
             LeafEvent::PacketSend(p) => {
-                if let Some((node, leaf)) = leaf_query.iter().find(|(node, _)| node.id == p.routing_header.hops[p.routing_header.hop_index - 1]) {
+                if let Some((node, leaf)) = leaf_query.iter().find(|(node, _)| {
+                    node.id == p.routing_header.hops[p.routing_header.hop_index - 1]
+                }) {
                     if leaf.leaf_type == LeafType::Client {
-                        let entry = info
-                        .client
-                        .entry(node.id)
-                        .or_insert(ClientData {
+                        let entry = info.client.entry(node.id).or_insert(ClientData {
                             packets_sent: 0,
                             data_received: 0,
                             pending_requests: 0,
                             avg_bytes_xmessage: 0,
                             fouls: 0,
                         });
-                        
                     }
-                    
                 }
             }
             LeafEvent::ControllerShortcut(p) => {
