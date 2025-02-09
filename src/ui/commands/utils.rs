@@ -74,34 +74,40 @@ impl Plugin for CommandPlugin {
 }
 
 pub fn is_connected(
-    nodes_to_add: HashMap<u8, (HashSet<u8>, bool)>,
+    mut nodes: HashMap<u8, HashSet<u8>>,
     removed_node: Option<u8>,
     removed_edge: Option<(u8, u8)>,
 ) -> bool {
-    let mut nodes: HashMap<u8, HashSet<u8>> = HashMap::new();
-    for (node_id, (neighbours, is_drone)) in nodes_to_add {
-        if is_drone {
-            nodes.insert(node_id, neighbours);
-        }
-    }
-
     if let Some(removed_id) = removed_node {
         nodes.remove(&removed_id);
-        for neighbours in nodes.values_mut() {
-            neighbours.remove(&removed_id);
+        for neighbors in nodes.values_mut() {
+            neighbors.remove(&removed_id);
         }
     }
     if let Some((removed_id1, removed_id2)) = removed_edge {
-        nodes.get_mut(&removed_id1).unwrap().remove(&removed_id2);
-        nodes.get_mut(&removed_id2).unwrap().remove(&removed_id1);
+        if let Some(neighbors) = nodes.get_mut(&removed_id1) {
+            neighbors.remove(&removed_id2);
+        }
+        if let Some(neighbors) = nodes.get_mut(&removed_id2) {
+            neighbors.remove(&removed_id1);
+        }
     }
+    if nodes.is_empty() {
+        return true;
+    }
+
     let mut visited = HashSet::new();
-    let mut stack = vec![*nodes.keys().next().unwrap()];
+    let start_node = *nodes.keys().next().unwrap();
+    let mut stack = vec![start_node];
     while let Some(node_id) = stack.pop() {
-        visited.insert(node_id);
-        for neighbour in nodes.get(&node_id).unwrap() {
-            if !visited.contains(neighbour) {
-                stack.push(*neighbour);
+        if visited.insert(node_id) {
+            // Visit all unvisited neighbors
+            if let Some(neighbors) = nodes.get(&node_id) {
+                for &neighbor in neighbors {
+                    if !visited.contains(&neighbor) {
+                        stack.push(neighbor);
+                    }
+                }
             }
         }
     }

@@ -217,20 +217,19 @@ pub fn remove_edge(
             println!("Can't remove self edge");
             return;
         }
-        let mut topology: HashMap<NodeId, (HashSet<NodeId>, bool)> = HashMap::new();
+        let mut topology: HashMap<NodeId, HashSet<NodeId>> = HashMap::new();
         for (node, leaf, _sender) in nodes.iter() {
-            if mode.bypass_cheks {
-                topology.insert(node.id, (node.neighbours.clone(), true));
-                continue;
-            }
             if let Some(leaf) = leaf {
+                if mode.bypass_cheks {
+                    topology.insert(node.id, node.neighbours.clone());
+                    continue;
+                }
                 if leaf.leaf_type == LeafType::Server && node.neighbours.len() <= 2 {
                     println!("Server should always have at least 2 connections");
                     return;
                 }
-                topology.insert(node.id, (node.neighbours.clone(), false));
             } else {
-                topology.insert(node.id, (node.neighbours.clone(), true));
+                topology.insert(node.id, node.neighbours.clone());
             };
         }
         if !(topology.contains_key(&rmv_edge.start_node)

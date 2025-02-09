@@ -40,14 +40,13 @@ pub fn crash(
     else {
         return;
     };
-    let mut topology: HashMap<NodeId, (HashSet<NodeId>, bool)> = HashMap::new();
+    let mut topology: HashMap<NodeId, HashSet<NodeId>> = HashMap::new();
     for (node, leaf, _sender) in nodes_query.iter() {
-        if mode.bypass_cheks {
-            topology.insert(node.id, (node.neighbours.clone(), true));
-            continue;
-        }
         if let Some(leaf) = leaf {
-            topology.insert(node.id, (node.neighbours.clone(), false));
+            if mode.bypass_cheks {
+                topology.insert(node.id, node.neighbours.clone());
+                continue;
+            }
             for ngb_id in &node_crashing.neighbours {
                 if node.id == *ngb_id
                     && leaf.leaf_type == LeafType::Server
@@ -59,10 +58,10 @@ pub fn crash(
                 }
             }
         } else {
-            topology.insert(node.id, (node.neighbours.clone(), true));
+            topology.insert(node.id, node.neighbours.clone());
         };
     }
-    topology.insert(node_crashing.id, (node_crashing.neighbours.clone(), true));
+    topology.insert(node_crashing.id, node_crashing.neighbours.clone());
     if !is_connected(topology, Some(node_crashing.id), None) {
         println!("Aborting crash: Crashing this drone will disconnect the network...aborting");
         commands.entity(entity).remove::<CrashMarker>();
