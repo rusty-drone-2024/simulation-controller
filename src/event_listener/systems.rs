@@ -1,11 +1,11 @@
 use crate::{
-    components::{Leaf, LeafType, Node},
+    components::Node,
     resources::{DroneListener, LeafListener},
 };
 use bevy::prelude::*;
 
 // TODO MAYBE HAVE SAME PARAMETERS AND STRUC TFOR BOTH LEAVES TOGHHETER THEN CHANGE DYSPLAY IN UI
-use super::resources::{ClientData, DisplayedInfo, DroneData, ServerData};
+use super::resources::{DisplayedInfo, DroneData, LeavesData};
 use common_structs::leaf::LeafEvent;
 use std::collections::HashMap;
 use wg_2024::{
@@ -16,8 +16,7 @@ use wg_2024::{
 pub fn initialize_info(mut commands: Commands) {
     commands.insert_resource(DisplayedInfo {
         drone: HashMap::default(),
-        client: HashMap::default(),
-        server: HashMap::default(),
+        leaf: HashMap::default(),
     });
 }
 
@@ -123,28 +122,55 @@ pub fn listen_drones_events(
 
 pub fn listen_leaves_events(
     leaf_listener: Res<LeafListener>,
-    leaf_query: Query<(&Node, &Leaf)>,
+    node_query: Query<&Node>,
     mut info: ResMut<DisplayedInfo>,
 ) {
     while let Ok(event) = leaf_listener.receiver.try_recv() {
         match event {
             LeafEvent::PacketSend(p) => {
-                if let Some((node, leaf)) = leaf_query.iter().find(|(node, _)| {
-                    node.id == p.routing_header.hops[p.routing_header.hop_index - 1]
-                }) {
-                    if leaf.leaf_type == LeafType::Client {
-                        let entry = info.client.entry(node.id).or_insert(ClientData {
-                            packets_sent: 0,
-                            data_received: 0,
-                            pending_requests: 0,
-                            avg_bytes_xmessage: 0,
-                            fouls: 0,
-                        });
-                    }
-                }
+                let entry = info
+                    .leaf
+                    .entry(p.routing_header.hops[p.routing_header.hop_index - 1])
+                    .or_insert(LeavesData {
+                        packets_sent: 0,
+                        data_sent: 0,
+                        pending_requests: 0,
+                        avg_bytes_xmessage: 0,
+                        fouls: 0,
+                        messages: Vec::new(),
+                    });
+                if let PacketType::MsgFragment(fragment) = p.pack_type {
+                    entry.data_sent += u64::from(fragment.length);
+                };
             }
             LeafEvent::ControllerShortcut(p) => {
-                //shortcut(&node_query, p);
+                let entry = info
+                    .leaf
+                    .entry(p.routing_header.hops[p.routing_header.hop_index - 1])
+                    .or_insert(LeavesData {
+                        packets_sent: 0,
+                        data_sent: 0,
+                        pending_requests: 0,
+                        avg_bytes_xmessage: 0,
+                        fouls: 0,
+                        messages: Vec::new(),
+                    });
+                if let PacketType::MsgFragment(_) | PacketType::FloodRequest(_) = p.pack_type {
+                    entry.fouls += 1;
+                } else {
+                    shortcut(&node_query, &p);
+                }
+            }
+            LeafEvent::MessageStartSend(id, _session, m) => {
+                let entry = info.leaf.entry(id).or_insert(LeavesData {
+                    packets_sent: 0,
+                    data_sent: 0,
+                    pending_requests: 0,
+                    avg_bytes_xmessage: 0,
+                    fouls: 0,
+                    messages: Vec::new(),
+                });
+                entry.messages.push(m);
             }
             _ => {}
         }

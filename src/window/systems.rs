@@ -1,3 +1,5 @@
+use std::cmp::{max, min};
+
 use super::resources::{MainUiState, SelectedUiState};
 use crate::components::{
     CrashMarker, Drone, Leaf,
@@ -228,32 +230,52 @@ pub fn window(
                                 ui.horizontal(|ui| {
                                     ui.add_space(6.0);
                                     ui.label(format!(
-                                        "Packets sent: {}",
-                                        info.drone[&node.id].packets_sent
+                                        "Packets sent: {:?}",
+                                        info.drone
+                                            .get(&node.id)
+                                            .is_some()
+                                            .then(|| { info.drone[&node.id].packets_sent })
+                                            .unwrap_or(0)
                                     ));
                                     ui.add_space(80.0);
                                     ui.label(format!(
-                                        "Packets shortcutted: {}",
-                                        info.drone[&node.id].packets_shortcutted
+                                        "Packets shortcutted: {:?}",
+                                        info.drone
+                                            .get(&node.id)
+                                            .is_some()
+                                            .then(|| { info.drone[&node.id].packets_shortcutted })
+                                            .unwrap_or(0)
                                     ));
                                 });
                                 ui.horizontal(|ui| {
                                     ui.add_space(6.0);
                                     ui.label(format!(
-                                        "Bytes sent: {}",
-                                        info.drone[&node.id].data_sent
+                                        "Bytes sent: {:?}",
+                                        info.drone
+                                            .get(&node.id)
+                                            .is_some()
+                                            .then(|| { info.drone[&node.id].data_sent })
+                                            .unwrap_or(0)
                                     ));
                                     ui.add_space(86.0);
                                     ui.label(format!(
-                                        "Bytes dropped: {}",
-                                        info.drone[&node.id].data_dropped
+                                        "Bytes dropped: {:?}",
+                                        info.drone
+                                            .get(&node.id)
+                                            .is_some()
+                                            .then(|| { info.drone[&node.id].data_dropped })
+                                            .unwrap_or(0)
                                     ));
                                 });
                                 ui.horizontal(|ui| {
                                     ui.add_space(6.0);
                                     ui.label(format!(
-                                        "Latency: {} ms",
-                                        info.drone[&node.id].latency
+                                        "Latency: {:?} ms",
+                                        info.drone
+                                            .get(&node.id)
+                                            .is_some()
+                                            .then(|| { info.drone[&node.id].latency })
+                                            .unwrap_or(0)
                                     ));
                                 });
 
@@ -261,13 +283,21 @@ pub fn window(
                                 ui.horizontal(|ui| {
                                     ui.add_space(6.0);
                                     ui.label(format!(
-                                        "Faulty packets sent: {}",
-                                        info.drone[&node.id].faulty_packets_sent
+                                        "Faulty packets sent: {:?}",
+                                        info.drone
+                                            .get(&node.id)
+                                            .is_some()
+                                            .then(|| { info.drone[&node.id].faulty_packets_sent })
+                                            .unwrap_or(0)
                                     ));
                                     ui.add_space(20.0);
                                     ui.label(format!(
-                                        "Number of fouls: {}",
-                                        info.drone[&node.id].fouls
+                                        "Number of fouls: {:?}",
+                                        info.drone
+                                            .get(&node.id)
+                                            .is_some()
+                                            .then(|| { info.drone[&node.id].fouls })
+                                            .unwrap_or(0)
                                     ));
                                 });
 
@@ -354,6 +384,105 @@ pub fn window(
                                         },
                                     );
                                     ui.label(format!("Neighbors: {:?}", node.neighbours));
+
+                                    ui.separator();
+                                    ui.separator();
+
+                                    // Client info
+                                    ui.heading("Infos:");
+                                    ui.add_space(10.0);
+                                    ui.horizontal(|ui| {
+                                        ui.add_space(6.0);
+                                        ui.label(format!(
+                                            "Packets sent: {:?}",
+                                            info.leaf
+                                                .get(&node.id)
+                                                .is_some()
+                                                .then(|| { info.leaf[&node.id].packets_sent })
+                                                .unwrap_or(0)
+                                        ));
+                                        ui.add_space(20.0);
+                                        ui.label(format!(
+                                            "Bytes sent: {:?}",
+                                            info.leaf
+                                                .get(&node.id)
+                                                .is_some()
+                                                .then(|| { info.leaf[&node.id].data_sent })
+                                                .unwrap_or(0)
+                                        ));
+                                    });
+                                    ui.horizontal(|ui| {
+                                        ui.add_space(6.0);
+                                        ui.label(format!(
+                                            "Pending requests: {:?}",
+                                            info.leaf
+                                                .get(&node.id)
+                                                .is_some()
+                                                .then(|| { info.leaf[&node.id].pending_requests })
+                                                .unwrap_or(0)
+                                        ));
+                                        ui.add_space(20.0);
+                                        ui.label(format!(
+                                            "Avg bytes x message: {:?}",
+                                            info.leaf
+                                                .get(&node.id)
+                                                .is_some()
+                                                .then(|| { info.leaf[&node.id].avg_bytes_xmessage })
+                                                .unwrap_or(0)
+                                        ));
+                                    });
+                                    ui.horizontal(|ui| {
+                                        ui.add_space(6.0);
+                                        ui.label(format!(
+                                            "Number of fouls: {:?}",
+                                            info.leaf
+                                                .get(&node.id)
+                                                .is_some()
+                                                .then(|| { info.leaf[&node.id].fouls })
+                                                .unwrap_or(0)
+                                        ));
+                                    });
+                                    ui.separator();
+                                    ui.heading("Last messages:");
+                                    egui::ScrollArea::vertical()
+                                        .max_height(600.0)
+                                        .auto_shrink([false; 2])
+                                        .show(ui, |ui| {
+                                            let mut len = info
+                                                .leaf
+                                                .get(&node.id)
+                                                .is_some()
+                                                .then(|| info.leaf[&node.id].messages.len())
+                                                .unwrap_or(0);
+                                            len = min(5, len);
+                                            for i in 0..len {
+                                                ui.horizontal(|ui| {
+                                                    ui.set_width(500.0);
+                                                    ui.horizontal(|ui| {
+                                                        ui.label(format!(
+                                                            "{:?}",
+                                                            info.leaf
+                                                                .get(&node.id)
+                                                                .is_some()
+                                                                .then(|| {
+                                                                    info.leaf[&node.id].messages
+                                                                        [info.leaf[&node.id]
+                                                                            .messages
+                                                                            .len()
+                                                                            - i
+                                                                            - 1]
+                                                                    .clone()
+                                                                })
+                                                                .unwrap()
+                                                        ));
+                                                        if ui.button(format!("Show")).clicked() {
+                                                            println!("Show info");
+                                                        }
+                                                    })
+                                                });
+                                            }
+                                        });
+
                                 // LEAF IS SERVER
                                 } else if leaf.leaf_type == Server {
                                     ui.with_layout(
