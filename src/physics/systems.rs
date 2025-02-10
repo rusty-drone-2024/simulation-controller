@@ -88,6 +88,18 @@ pub fn remove_items(
     }
 }
 
+#[allow(clippy::cast_sign_loss)]
+#[allow(clippy::cast_possible_truncation)]
+pub fn accurate_update(force_graph: &mut ResMut<MyForceGraph>, secs: f32) {
+    const MAX_INTERVAL: f32 = 0.02;
+    let intervals = secs.div_euclid(MAX_INTERVAL) as usize;
+    let remainder = secs.rem_euclid(MAX_INTERVAL);
+    for _ in 0..intervals {
+        force_graph.data.update(MAX_INTERVAL);
+    }
+    force_graph.data.update(remainder);
+}
+
 pub fn update_nodes(
     mut force_graph: ResMut<MyForceGraph>,
     time: Res<Time>,
@@ -95,7 +107,7 @@ pub fn update_nodes(
 ) {
     let mut delta_sec = time.delta_secs();
     delta_sec = delta_sec.clamp(0.0, 0.1);
-    force_graph.data.update(delta_sec);
+    accurate_update(&mut force_graph, delta_sec);
     for (mut transform, petgraph) in &mut nodes {
         if force_graph.data.contains_node(petgraph.index) {
             let (x, y) = force_graph.data.get_node_position(petgraph.index);
