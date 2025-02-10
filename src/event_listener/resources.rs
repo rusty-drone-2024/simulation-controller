@@ -65,7 +65,7 @@ impl DroneData {
         let mut percentages: Vec<(NodeId, u32)> = self
             .neighbours
             .iter()
-            .map(|(&node_id, &ref bytes)| {
+            .map(|(&node_id, bytes)| {
                 let percentage = ((bytes.0 as f64 / total_bytes_sent.0 as f64) * 100.0)
                     .clamp(1.0, 100.0)
                     .round() as u32;

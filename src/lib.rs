@@ -4,6 +4,10 @@
 #![allow(clippy::module_name_repetitions)]
 #![allow(clippy::type_complexity)]
 #![allow(clippy::too_many_arguments)]
+#![allow(clippy::too_many_lines)]
+#![allow(clippy::cast_precision_loss)]
+#![allow(clippy::cast_possible_truncation)]
+#![allow(clippy::cast_sign_loss)]
 
 mod components;
 mod events;

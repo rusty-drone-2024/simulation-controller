@@ -275,7 +275,7 @@ pub fn window(
                                         info.drone[&node.id].neighbour_usage_percentages();
                                     for (id, percentage) in usage_percentage {
                                         ui.add_space(2.0);
-                                        ui.label(format!("{}: {}%", id, percentage));
+                                        ui.label(format!("[{id}] {percentage}%"));
                                     }
                                 });
                                 ui.add_space(10.0);
