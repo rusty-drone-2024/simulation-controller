@@ -4,11 +4,14 @@ use crate::{
 };
 use bevy::prelude::*;
 
-use super::resources::{ClientData, DisplayedInfo, DroneData};
+// TODO MAYBE HAVE SAME PARAMETERS AND STRUC TFOR BOTH LEAVES TOGHHETER THEN CHANGE DYSPLAY IN UI
+use super::resources::{ClientData, DisplayedInfo, DroneData, ServerData};
 use common_structs::leaf::LeafEvent;
 use std::collections::HashMap;
-use wg_2024::packet::PacketType::{FloodRequest, MsgFragment};
-use wg_2024::{controller::DroneEvent, packet::Packet};
+use wg_2024::{
+    controller::DroneEvent,
+    packet::{Packet, PacketType},
+};
 
 pub fn initialize_info(mut commands: Commands) {
     commands.insert_resource(DisplayedInfo {
@@ -18,7 +21,7 @@ pub fn initialize_info(mut commands: Commands) {
     });
 }
 
-// TODO catch each packettype to log different messages depending on whats happening/wrong
+// TODO catch each packet type to log different messages depending on whats happening/wrong
 pub fn listen_drones_events(
     drone_listener: Res<DroneListener>,
     node_query: Query<&Node>,
@@ -40,14 +43,14 @@ pub fn listen_drones_events(
                         neighbours: HashMap::default(),
                         latency: 0,
                     });
-                if let MsgFragment(fragment) = p.pack_type {
+                if let PacketType::MsgFragment(fragment) = p.pack_type {
                     entry.data_dropped += u64::from(fragment.length);
                 } else {
                     entry.fouls += 1;
                 }
             }
             DroneEvent::PacketSent(p) => {
-                if let FloodRequest(_) = p.pack_type {
+                if let PacketType::FloodRequest(_) = p.pack_type {
                     continue;
                 }
                 let entry = info
@@ -84,7 +87,7 @@ pub fn listen_drones_events(
                 };
                 // TODO: check for destination is drone
                 ////
-                if let MsgFragment(fragment) = p.pack_type {
+                if let PacketType::MsgFragment(fragment) = p.pack_type {
                     entry.data_sent += u64::from(fragment.length);
                     entry
                         .neighbours
@@ -107,7 +110,7 @@ pub fn listen_drones_events(
                         neighbours: HashMap::default(),
                         latency: 0,
                     });
-                if let MsgFragment(_) | FloodRequest(_) = p.pack_type {
+                if let PacketType::MsgFragment(_) | PacketType::FloodRequest(_) = p.pack_type {
                     entry.fouls += 1;
                 } else {
                     entry.packets_shortcutted += 1;

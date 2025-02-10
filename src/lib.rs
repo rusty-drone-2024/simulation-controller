@@ -1,5 +1,7 @@
 #![warn(clippy::pedantic)]
+// Allow since clippy lint not adapted to bevy
 #![allow(clippy::needless_pass_by_value)]
+#![allow(clippy::module_name_repetitions)]
 #![allow(clippy::type_complexity)]
 #![allow(clippy::too_many_arguments)]
 

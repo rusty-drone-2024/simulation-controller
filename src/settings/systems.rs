@@ -81,7 +81,7 @@ pub fn update_unchecked(mut reader: EventReader<ModeEvent>, mut state: ResMut<Mo
 
 pub fn reset_infos(mut reader: EventReader<ResetInfosEvent>, mut info: ResMut<DisplayedInfo>) {
     for _ in reader.read() {
-        for (_, data) in &mut info.drone {
+        for data in info.drone.values_mut() {
             data.packets_sent = 0;
             data.packets_shortcutted = 0;
             data.data_sent = 0;
@@ -91,14 +91,14 @@ pub fn reset_infos(mut reader: EventReader<ResetInfosEvent>, mut info: ResMut<Di
             data.neighbours.clear();
             data.latency = 0;
         }
-        for (_, data) in &mut info.server {
+        for data in info.server.values_mut() {
             data.packets_sent = 0;
             data.data_sent = 0;
             data.pending_requests = 0;
             data.avg_bytes_xmessage = 0;
             data.fouls = 0;
         }
-        for (_, data) in &mut info.client {
+        for data in info.client.values_mut() {
             data.packets_sent = 0;
             data.data_received = 0;
             data.pending_requests = 0;

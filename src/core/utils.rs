@@ -306,13 +306,11 @@ pub fn is_connected(
     if nodes.is_empty() {
         return true;
     }
-
     let mut visited = HashSet::new();
     let start_node = *nodes.keys().next().unwrap();
     let mut stack = vec![start_node];
     while let Some(node_id) = stack.pop() {
         if visited.insert(node_id) {
-            // Visit all unvisited neighbors
             if let Some(neighbors) = nodes.get(&node_id) {
                 for &neighbor in neighbors {
                     if !visited.contains(&neighbor) {
