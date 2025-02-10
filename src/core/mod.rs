@@ -2,12 +2,12 @@ mod camera;
 use camera::CameraPlugin;
 
 pub mod creator;
-pub mod drone_system;
-use drone_system::DronePlugin;
+pub mod utils;
+use utils::UtilsPlugin;
 pub mod initializer;
 use initializer::SpawnTopologyPlugin;
-pub mod utils;
-use utils::UtilsPlugins;
+pub mod sytems;
+use sytems::FunctionalityPlugins;
 
 use bevy::{
     prelude::*,
@@ -24,8 +24,8 @@ impl Plugin for CorePlugin {
         .insert_resource(ClearColor(Color::srgb(0.4, 0.4, 0.8)))
         .insert_resource(Time::<Fixed>::from_seconds(1.0))
         .add_plugins(CameraPlugin)
-        .add_plugins(DronePlugin)
+        .add_plugins(UtilsPlugin)
         .add_plugins(SpawnTopologyPlugin)
-        .add_plugins(UtilsPlugins);
+        .add_plugins(FunctionalityPlugins);
     }
 }

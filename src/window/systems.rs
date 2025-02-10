@@ -6,9 +6,10 @@ use crate::components::{
     LeafType::{Client, Server},
     Node, SelectedMarker,
 };
+use crate::event_listener::resources::Bytes;
 use crate::event_listener::DisplayedInfo;
 use crate::events::{AddDroneEvent, AddEdgeEvent, RmvEdgeEvent};
-use bevy::{log::tracing_subscriber::field::display::Messages, prelude::*};
+use bevy::prelude::*;
 use bevy_egui::{egui, EguiContexts};
 
 pub fn initialize_ui_state(mut commands: Commands) {
@@ -232,8 +233,7 @@ pub fn window(
                                     ui.label(format!(
                                         "Packets sent: {:?}",
                                         info.drone
-                                            .get(&node.id)
-                                            .is_some()
+                                            .contains_key(&node.id)
                                             .then(|| { info.drone[&node.id].packets_sent })
                                             .unwrap_or(0)
                                     ));
@@ -241,8 +241,7 @@ pub fn window(
                                     ui.label(format!(
                                         "Packets shortcutted: {:?}",
                                         info.drone
-                                            .get(&node.id)
-                                            .is_some()
+                                            .contains_key(&node.id)
                                             .then(|| { info.drone[&node.id].packets_shortcutted })
                                             .unwrap_or(0)
                                     ));
@@ -250,21 +249,19 @@ pub fn window(
                                 ui.horizontal(|ui| {
                                     ui.add_space(6.0);
                                     ui.label(format!(
-                                        "Bytes sent: {:?}",
+                                        "Data sent: {:?}",
                                         info.drone
-                                            .get(&node.id)
-                                            .is_some()
-                                            .then(|| { info.drone[&node.id].data_sent })
-                                            .unwrap_or(0)
+                                            .contains_key(&node.id)
+                                            .then(|| { info.drone[&node.id].data_sent.clone() })
+                                            .unwrap_or(Bytes(0))
                                     ));
                                     ui.add_space(86.0);
                                     ui.label(format!(
-                                        "Bytes dropped: {:?}",
+                                        "Data dropped: {:?}",
                                         info.drone
-                                            .get(&node.id)
-                                            .is_some()
-                                            .then(|| { info.drone[&node.id].data_dropped })
-                                            .unwrap_or(0)
+                                            .contains_key(&node.id)
+                                            .then(|| { info.drone[&node.id].data_dropped.clone() })
+                                            .unwrap_or(Bytes(0))
                                     ));
                                 });
                                 ui.horizontal(|ui| {
@@ -272,35 +269,11 @@ pub fn window(
                                     ui.label(format!(
                                         "Latency: {:?} ms",
                                         info.drone
-                                            .get(&node.id)
-                                            .is_some()
+                                            .contains_key(&node.id)
                                             .then(|| { info.drone[&node.id].latency })
                                             .unwrap_or(0)
                                     ));
                                 });
-
-                                ui.separator();
-                                ui.horizontal(|ui| {
-                                    ui.add_space(6.0);
-                                    ui.label(format!(
-                                        "Faulty packets sent: {:?}",
-                                        info.drone
-                                            .get(&node.id)
-                                            .is_some()
-                                            .then(|| { info.drone[&node.id].faulty_packets_sent })
-                                            .unwrap_or(0)
-                                    ));
-                                    ui.add_space(20.0);
-                                    ui.label(format!(
-                                        "Number of fouls: {:?}",
-                                        info.drone
-                                            .get(&node.id)
-                                            .is_some()
-                                            .then(|| { info.drone[&node.id].fouls })
-                                            .unwrap_or(0)
-                                    ));
-                                });
-
                                 ui.add_space(10.0);
                                 // Drone info end
 
@@ -389,6 +362,8 @@ pub fn window(
                                     ui.separator();
 
                                     // Client info
+                                    let bytes = &info.leaf[&node.id].data_sent;
+                                    let msg_n = info.leaf[&node.id].msg_n;
                                     ui.heading("Infos:");
                                     ui.add_space(10.0);
                                     ui.horizontal(|ui| {
@@ -396,19 +371,17 @@ pub fn window(
                                         ui.label(format!(
                                             "Packets sent: {:?}",
                                             info.leaf
-                                                .get(&node.id)
-                                                .is_some()
+                                                .contains_key(&node.id)
                                                 .then(|| { info.leaf[&node.id].packets_sent })
                                                 .unwrap_or(0)
                                         ));
                                         ui.add_space(20.0);
                                         ui.label(format!(
-                                            "Bytes sent: {:?}",
+                                            "Data sent: {:?}",
                                             info.leaf
-                                                .get(&node.id)
-                                                .is_some()
-                                                .then(|| { info.leaf[&node.id].data_sent })
-                                                .unwrap_or(0)
+                                                .contains_key(&node.id)
+                                                .then(|| { info.leaf[&node.id].data_sent.clone() })
+                                                .unwrap_or(Bytes(0))
                                         ));
                                     });
                                     ui.horizontal(|ui| {
@@ -416,20 +389,18 @@ pub fn window(
                                         ui.label(format!(
                                             "Requests sent: {:?}",
                                             info.leaf
-                                                .get(&node.id)
-                                                .is_some()
+                                                .contains_key(&node.id)
                                                 .then(|| { info.leaf[&node.id].msg_n })
                                                 .unwrap_or(0)
                                         ));
                                         ui.add_space(20.0);
-                                        let bytes = info.leaf[&node.id].data_sent;
-                                        let msg_n = info.leaf[&node.id].msg_n;
-                                        if bytes == 0 || msg_n == 0 {
-                                            ui.label("Average bytes per message: -");
+
+                                        if *bytes == Bytes(0) || msg_n == 0 {
+                                            ui.label("Average data per message: -");
                                         } else {
                                             ui.label(format!(
-                                                "Average bytes per message: {:?}",
-                                                bytes / msg_n
+                                                "Average data per message: {:?}",
+                                                bytes.clone() / msg_n
                                             ));
                                         }
                                     });
@@ -442,8 +413,7 @@ pub fn window(
                                             let len = min(
                                                 10,
                                                 info.leaf
-                                                    .get(&node.id)
-                                                    .is_some()
+                                                    .contains_key(&node.id)
                                                     .then(|| info.leaf[&node.id].messages.len())
                                                     .unwrap_or(0),
                                             );
@@ -487,8 +457,83 @@ pub fn window(
                                     ui.separator();
 
                                     // Server info
+                                    let bytes = &info.leaf[&node.id].data_sent;
+                                    let msg_n = info.leaf[&node.id].msg_n;
                                     ui.heading("Infos:");
                                     ui.add_space(10.0);
+                                    ui.horizontal(|ui| {
+                                        ui.add_space(6.0);
+                                        ui.label(format!(
+                                            "Packets sent: {:?}",
+                                            info.leaf
+                                                .contains_key(&node.id)
+                                                .then(|| { info.leaf[&node.id].packets_sent })
+                                                .unwrap_or(0)
+                                        ));
+                                        ui.add_space(20.0);
+                                        ui.label(format!(
+                                            "Data sent: {:?}",
+                                            info.leaf
+                                                .contains_key(&node.id)
+                                                .then(|| { info.leaf[&node.id].data_sent.clone() })
+                                                .unwrap_or(Bytes(0))
+                                        ));
+                                    });
+                                    ui.horizontal(|ui| {
+                                        ui.add_space(6.0);
+                                        ui.label(format!(
+                                            "Responses sent: {:?}",
+                                            info.leaf
+                                                .contains_key(&node.id)
+                                                .then(|| { info.leaf[&node.id].msg_n })
+                                                .unwrap_or(0)
+                                        ));
+                                        ui.add_space(20.0);
+
+                                        if *bytes == Bytes(0) || msg_n == 0 {
+                                            ui.label("Average data per message: -");
+                                        } else {
+                                            ui.label(format!(
+                                                "Average data per message: {:?}",
+                                                bytes.clone() / msg_n
+                                            ));
+                                        }
+                                    });
+                                    ui.separator();
+                                    ui.heading("Last messages:");
+                                    egui::ScrollArea::vertical()
+                                        .max_height(600.0)
+                                        .auto_shrink([false; 2])
+                                        .show(ui, |ui| {
+                                            let len = min(
+                                                10,
+                                                info.leaf
+                                                    .contains_key(&node.id)
+                                                    .then(|| info.leaf[&node.id].messages.len())
+                                                    .unwrap_or(0),
+                                            );
+                                            for i in 0..len {
+                                                ui.horizontal(|ui| {
+                                                    ui.set_width(500.0);
+                                                    ui.horizontal(|ui| {
+                                                        let info = info.leaf[&node.id]
+                                                            .messages
+                                                            .values()
+                                                            .nth(i)
+                                                            .unwrap();
+                                                        if info.2 {
+                                                            ui.label("Sent: ");
+                                                        } else {
+                                                            ui.label("Sending: ");
+                                                        }
+                                                        ui.add_space(20.0);
+                                                        ui.label(format!("{:?}", info.0));
+                                                        ui.add_space(20.0);
+                                                        ui.label(format!("To: {:?}", info.1));
+                                                    })
+                                                });
+                                            }
+                                        });
                                 };
                             }
                         } else {

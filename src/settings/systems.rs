@@ -1,6 +1,6 @@
 use super::events::{ModeEvent, MusicEvent, ResetInfosEvent};
 use super::resources::{ModeConfig, MusicResource, StateResource};
-use crate::event_listener::DisplayedInfo;
+use crate::event_listener::{resources::Bytes, DisplayedInfo};
 use bevy::prelude::*;
 use bevy_egui::{egui, EguiContexts};
 
@@ -84,16 +84,14 @@ pub fn reset_infos(mut reader: EventReader<ResetInfosEvent>, mut info: ResMut<Di
         for data in info.drone.values_mut() {
             data.packets_sent = 0;
             data.packets_shortcutted = 0;
-            data.data_sent = 0;
-            data.data_dropped = 0;
-            data.faulty_packets_sent = 0;
-            data.fouls = 0;
+            data.data_sent = Bytes(0);
+            data.data_dropped = Bytes(0);
             data.neighbours.clear();
             data.latency = 0;
         }
         for data in info.leaf.values_mut() {
             data.packets_sent = 0;
-            data.data_sent = 0;
+            data.data_sent = Bytes(0);
             data.msg_n = 0;
             data.messages.clear();
         }
