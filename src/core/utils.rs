@@ -1,10 +1,9 @@
-use crate::ui::commands::utils::{is_connected, CommandSender};
-use crate::ui::components::{
-    AddDroneEvent, AddEdgeEvent, Edge, Leaf, LeafType, Node, RmvEdgeEvent,
-};
-use crate::ui::creator::spawn_drone;
-use crate::ui::resources::Senders;
-use crate::ui::settings::ModeConfig;
+use crate::command_sender::sender_trait::CommandSender;
+use crate::components::{Edge, Leaf, LeafType, Node};
+use crate::core::creator::spawn_drone;
+use crate::events::{AddDroneEvent, AddEdgeEvent, RmvEdgeEvent};
+use crate::resources::Senders;
+use crate::settings::ModeConfig;
 use bevy::prelude::*;
 use bevy_trait_query::One;
 use crossbeam_channel::Sender;
@@ -283,4 +282,43 @@ pub fn remove_edge(
             }
         }
     }
+}
+
+pub fn is_connected(
+    mut nodes: HashMap<u8, HashSet<u8>>,
+    removed_node: Option<u8>,
+    removed_edge: Option<(u8, u8)>,
+) -> bool {
+    if let Some(removed_id) = removed_node {
+        nodes.remove(&removed_id);
+        for neighbors in nodes.values_mut() {
+            neighbors.remove(&removed_id);
+        }
+    }
+    if let Some((removed_id1, removed_id2)) = removed_edge {
+        if let Some(neighbors) = nodes.get_mut(&removed_id1) {
+            neighbors.remove(&removed_id2);
+        }
+        if let Some(neighbors) = nodes.get_mut(&removed_id2) {
+            neighbors.remove(&removed_id1);
+        }
+    }
+    if nodes.is_empty() {
+        return true;
+    }
+    let mut visited = HashSet::new();
+    let start_node = *nodes.keys().next().unwrap();
+    let mut stack = vec![start_node];
+    while let Some(node_id) = stack.pop() {
+        if visited.insert(node_id) {
+            if let Some(neighbors) = nodes.get(&node_id) {
+                for &neighbor in neighbors {
+                    if !visited.contains(&neighbor) {
+                        stack.push(neighbor);
+                    }
+                }
+            }
+        }
+    }
+    visited.len() == nodes.len()
 }

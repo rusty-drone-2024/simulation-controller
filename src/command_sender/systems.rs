@@ -1,25 +1,13 @@
-use crate::ui::commands::utils::{is_connected, CommandSender};
-use crate::ui::components::{
+use super::sender_trait::CommandSender;
+use crate::components::{
     CrashMarker, Drone, Edge, Leaf, LeafType, Node, SelectedMarker, SelectionSpriteMarker, Text,
 };
-use crate::ui::settings::ModeConfig;
+use crate::core::utils::is_connected;
+use crate::settings::ModeConfig;
 use bevy::prelude::*;
 use bevy_trait_query::One;
 use std::collections::{HashMap, HashSet};
 use wg_2024::{controller::DroneCommand, network::NodeId};
-
-impl Drone {
-    pub fn set_packet_drop_rate(&mut self, pdr: f32) -> Result<(), String> {
-        let res = self
-            .command_channel
-            .send(DroneCommand::SetPacketDropRate(pdr))
-            .map_err(|err| err.to_string());
-        if res.is_ok() {
-            self.pdr = pdr;
-        };
-        res
-    }
-}
 
 pub fn crash(
     mut commands: Commands,

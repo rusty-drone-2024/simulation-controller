@@ -1,56 +1,10 @@
+use super::events::{ModeEvent, MusicEvent, ResetInfosEvent};
+use super::resources::{ModeConfig, MusicResource, StateResource};
+use crate::event_listener::DisplayedInfo;
 use bevy::prelude::*;
 use bevy_egui::{egui, EguiContexts};
 
-use crate::ui::event_listener::DisplayedInfo;
-
-#[derive(Debug, Resource)]
-pub struct MusicResource {
-    pub entity: Option<Entity>,
-    pub playing: bool,
-}
-
-#[derive(Debug, Resource)]
-pub struct StateResource {
-    pub unchecked: bool,
-}
-
-#[derive(Resource)]
-pub struct ModeConfig {
-    pub bypass_cheks: bool,
-}
-
-#[derive(Event)]
-struct MusicEvent;
-
-#[derive(Event)]
-struct ModeEvent;
-
-#[derive(Event)]
-struct ResetInfosEvent;
-
-pub struct SettingsPlugin;
-
-impl Plugin for SettingsPlugin {
-    fn build(&self, app: &mut App) {
-        app.insert_resource(MusicResource {
-            entity: None,
-            playing: true,
-        });
-        app.insert_resource(StateResource { unchecked: false });
-        app.insert_resource(ModeConfig {
-            bypass_cheks: false,
-        });
-        app.add_event::<MusicEvent>();
-        app.add_event::<ModeEvent>();
-        app.add_event::<ResetInfosEvent>();
-        app.add_systems(Update, settings_window);
-        app.add_systems(Update, update_music);
-        app.add_systems(Update, update_unchecked);
-        app.add_systems(Update, reset_infos);
-    }
-}
-
-fn settings_window(
+pub fn settings_window(
     mut contexts: EguiContexts,
     mut music_ui: ResMut<MusicResource>,
     mut state_ui: ResMut<StateResource>,
@@ -73,8 +27,25 @@ fn settings_window(
         }
     });
 }
+pub fn spawn_soundtrack(
+    mut commands: Commands,
+    asset_server: Res<AssetServer>,
+    mut music: ResMut<MusicResource>,
+) {
+    let entity = commands
+        .spawn((
+            AudioPlayer::new(asset_server.load("soundtrack.mp3")),
+            PlaybackSettings {
+                mode: bevy::audio::PlaybackMode::Loop,
+                volume: bevy::audio::Volume::new(0.5),
+                ..Default::default()
+            },
+        ))
+        .id();
+    music.entity = Some(entity);
+}
 
-fn update_music(
+pub fn update_soundtrack(
     mut commands: Commands,
     asset_server: Res<AssetServer>,
     mut reader: EventReader<MusicEvent>,
@@ -102,15 +73,15 @@ fn update_music(
     }
 }
 
-fn update_unchecked(mut reader: EventReader<ModeEvent>, mut state: ResMut<ModeConfig>) {
+pub fn update_unchecked(mut reader: EventReader<ModeEvent>, mut state: ResMut<ModeConfig>) {
     for _ in reader.read() {
         state.bypass_cheks = !state.bypass_cheks;
     }
 }
 
-fn reset_infos(mut reader: EventReader<ResetInfosEvent>, mut info: ResMut<DisplayedInfo>) {
+pub fn reset_infos(mut reader: EventReader<ResetInfosEvent>, mut info: ResMut<DisplayedInfo>) {
     for _ in reader.read() {
-        for (_, data) in &mut info.drone {
+        for data in info.drone.values_mut() {
             data.packets_sent = 0;
             data.packets_shortcutted = 0;
             data.data_sent = 0;
@@ -120,14 +91,14 @@ fn reset_infos(mut reader: EventReader<ResetInfosEvent>, mut info: ResMut<Displa
             data.neighbours.clear();
             data.latency = 0;
         }
-        for (_, data) in &mut info.server {
+        for data in info.server.values_mut() {
             data.packets_sent = 0;
             data.data_sent = 0;
             data.pending_requests = 0;
             data.avg_bytes_xmessage = 0;
             data.fouls = 0;
         }
-        for (_, data) in &mut info.client {
+        for data in info.client.values_mut() {
             data.packets_sent = 0;
             data.data_received = 0;
             data.pending_requests = 0;

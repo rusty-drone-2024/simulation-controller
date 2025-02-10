@@ -37,7 +37,7 @@ fn spawn_camera(mut commands: Commands, camera_settings: Res<CameraSettings>) {
             scaling_mode: ScalingMode::FixedVertical {
                 viewport_height: camera_settings.orthographic_viewport_height,
             },
-            scale: 100.0, // Start with a more distant scale (higher value for distance)
+            scale: 100.0,
             ..OrthographicProjection::default_2d()
         }),
     ));

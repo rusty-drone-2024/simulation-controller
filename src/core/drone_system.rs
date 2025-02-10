@@ -1,4 +1,4 @@
-use super::components::{Leaf, Node, SelectedMarker, SelectionSpriteMarker};
+use crate::components::{Leaf, Node};
 use bevy::prelude::*;
 
 pub struct DronePlugin;
@@ -6,7 +6,6 @@ pub struct DronePlugin;
 impl Plugin for DronePlugin {
     fn build(&self, app: &mut App) {
         app.add_systems(Update, drone_color);
-        app.add_systems(Update, update_selected_position);
     }
 }
 
@@ -32,21 +31,5 @@ fn int_to_rgb(n: usize) -> (f32, f32, f32) {
             (r, g, 0.0)
         }
         _ => (255.0, 0.0, 0.0),
-    }
-}
-
-fn update_selected_position(
-    node_query: Query<&Transform, (With<SelectedMarker>, Without<SelectionSpriteMarker>)>,
-    mut selector_query: Query<(&mut Transform, &mut Visibility), With<SelectionSpriteMarker>>,
-) {
-    if node_query.iter().count() == 0 {
-        for (_transform, mut visibility) in &mut selector_query {
-            *visibility = Visibility::Hidden;
-        }
-    }
-    for node_transform in node_query.iter() {
-        for (mut transform, _visibility) in &mut selector_query {
-            transform.translation = node_transform.translation;
-        }
     }
 }

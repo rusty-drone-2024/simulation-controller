@@ -1,36 +1,15 @@
-use crate::ui::components::{
-    AddDroneEvent, AddEdgeEvent, CrashMarker, Drone, Leaf,
+use super::resources::{MainUiState, SelectedUiState};
+use crate::components::{
+    CrashMarker, Drone, Leaf,
     LeafType::{Client, Server},
-    Node, RmvEdgeEvent, SelectedMarker,
+    Node, SelectedMarker,
 };
-use crate::ui::event_listener::DisplayedInfo;
+use crate::event_listener::DisplayedInfo;
+use crate::events::{AddDroneEvent, AddEdgeEvent, RmvEdgeEvent};
 use bevy::prelude::*;
 use bevy_egui::{egui, EguiContexts};
 
-pub struct WindowPlugin;
-
-impl Plugin for WindowPlugin {
-    fn build(&self, app: &mut App) {
-        app.add_systems(Startup, initialize_ui_state)
-            .add_systems(Update, window);
-    }
-}
-
-#[derive(Resource, Debug)]
-pub struct MainUiState {
-    pub new_pdr: Option<String>,
-    pub nbhg_1: Option<String>,
-    pub nbhg_2: Option<String>,
-}
-
-#[derive(Resource, Debug)]
-pub struct SelectedUiState {
-    pub pdr: Option<String>,
-    pub node_to_add: Option<String>,
-    pub node_to_rmv: Option<String>,
-}
-
-fn initialize_ui_state(mut commands: Commands) {
+pub fn initialize_ui_state(mut commands: Commands) {
     commands.insert_resource(MainUiState {
         new_pdr: Some(0.0.to_string()),
         nbhg_1: Some(0.to_string()),
@@ -43,7 +22,59 @@ fn initialize_ui_state(mut commands: Commands) {
     });
 }
 
-fn window(
+pub fn observer_drone(
+    trigger: Trigger<Pointer<Click>>,
+    mut commands: Commands,
+    last_selected_node_query: Query<Entity, With<SelectedMarker>>,
+    mut to_select_node_query: Query<(&mut Node, &Drone, &Transform), Without<SelectedMarker>>,
+    mut selector_query: Query<(&mut Transform, &mut Visibility), (Without<Node>, Without<Camera>)>,
+    mut selected_state: ResMut<SelectedUiState>,
+) {
+    let entity = trigger.entity();
+
+    for entity in last_selected_node_query.iter() {
+        commands.entity(entity).remove::<SelectedMarker>();
+    }
+    for (node, drone, transform) in &mut to_select_node_query {
+        if node.entity_id == entity {
+            selected_state.pdr = Some(drone.pdr.clone().to_string());
+            commands.entity(entity).insert(SelectedMarker);
+            for (mut selector, mut visibility) in &mut selector_query {
+                selector.translation =
+                    Vec3::new(transform.translation.x, transform.translation.y, -10.0);
+                *visibility = Visibility::Visible;
+            }
+        }
+    }
+}
+
+pub fn observer_leaf(
+    trigger: Trigger<Pointer<Click>>,
+    mut commands: Commands,
+    last_selected_node_query: Query<Entity, With<SelectedMarker>>,
+    mut to_select_node_query: Query<(&mut Node, &Transform), Without<SelectedMarker>>,
+    mut selector_query: Query<(&mut Transform, &mut Visibility), (Without<Node>, Without<Camera>)>,
+    mut selected_state: ResMut<SelectedUiState>,
+) {
+    let entity = trigger.entity();
+
+    for entity in last_selected_node_query.iter() {
+        commands.entity(entity).remove::<SelectedMarker>();
+    }
+    for (node, transform) in &mut to_select_node_query {
+        if node.entity_id == entity {
+            selected_state.pdr = None;
+            commands.entity(entity).insert(SelectedMarker);
+            for (mut selector, mut visibility) in &mut selector_query {
+                selector.translation =
+                    Vec3::new(transform.translation.x, transform.translation.y, -10.0);
+                *visibility = Visibility::Visible;
+            }
+        }
+    }
+}
+
+pub fn window(
     mut commands: Commands,
     mut ew_add_drone: EventWriter<AddDroneEvent>,
     mut ew_add_edge: EventWriter<AddEdgeEvent>,

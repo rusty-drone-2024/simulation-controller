@@ -1,10 +1,9 @@
 use bevy::prelude::*;
 
-use crate::ui::components::{Drone, Leaf};
+use crate::components::{Drone, Leaf};
 use bevy_trait_query::RegisterExt;
 use common_structs::leaf::LeafCommand;
 use crossbeam_channel::Sender;
-use std::collections::{HashMap, HashSet};
 use wg_2024::{controller::DroneCommand, network::NodeId, packet::Packet};
 
 #[bevy_trait_query::queryable]
@@ -64,52 +63,11 @@ impl CommandSender for Leaf {
     }
 }
 
-pub struct CommandPlugin;
+pub struct SenderTraitPlugin;
 
-impl Plugin for CommandPlugin {
+impl Plugin for SenderTraitPlugin {
     fn build(&self, app: &mut App) {
         app.register_component_as::<dyn CommandSender, Drone>()
             .register_component_as::<dyn CommandSender, Leaf>();
     }
-}
-
-pub fn is_connected(
-    mut nodes: HashMap<u8, HashSet<u8>>,
-    removed_node: Option<u8>,
-    removed_edge: Option<(u8, u8)>,
-) -> bool {
-    if let Some(removed_id) = removed_node {
-        nodes.remove(&removed_id);
-        for neighbors in nodes.values_mut() {
-            neighbors.remove(&removed_id);
-        }
-    }
-    if let Some((removed_id1, removed_id2)) = removed_edge {
-        if let Some(neighbors) = nodes.get_mut(&removed_id1) {
-            neighbors.remove(&removed_id2);
-        }
-        if let Some(neighbors) = nodes.get_mut(&removed_id2) {
-            neighbors.remove(&removed_id1);
-        }
-    }
-    if nodes.is_empty() {
-        return true;
-    }
-
-    let mut visited = HashSet::new();
-    let start_node = *nodes.keys().next().unwrap();
-    let mut stack = vec![start_node];
-    while let Some(node_id) = stack.pop() {
-        if visited.insert(node_id) {
-            // Visit all unvisited neighbors
-            if let Some(neighbors) = nodes.get(&node_id) {
-                for &neighbor in neighbors {
-                    if !visited.contains(&neighbor) {
-                        stack.push(neighbor);
-                    }
-                }
-            }
-        }
-    }
-    visited.len() == nodes.len()
 }

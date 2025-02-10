@@ -1,87 +1,28 @@
-use crate::ui::components::{LeafType, Node};
-use crate::ui::resources::{DroneListener, LeafListener};
+use crate::{
+    components::{Leaf, LeafType, Node},
+    resources::{DroneListener, LeafListener},
+};
 use bevy::prelude::*;
 
-use bevy::utils::HashMap;
+// TODO MAYBE HAVE SAME PARAMETERS AND STRUC TFOR BOTH LEAVES TOGHHETER THEN CHANGE DYSPLAY IN UI
+use super::resources::{ClientData, DisplayedInfo, DroneData, ServerData};
 use common_structs::leaf::LeafEvent;
-use wg_2024::packet::PacketType::{FloodRequest, MsgFragment};
-use wg_2024::{controller::DroneEvent, network::NodeId, packet::Packet};
+use std::collections::HashMap;
+use wg_2024::{
+    controller::DroneEvent,
+    packet::{Packet, PacketType},
+};
 
-use super::components::Leaf;
-
-type Packets = u64;
-type Bytes = u64;
-
-#[derive(Debug)]
-pub struct DroneData {
-    // Number of packets sent and shortcutted are disjoint
-    pub packets_sent: Packets,
-    pub packets_shortcutted: u64,
-    // In bytes
-    pub data_sent: Bytes,
-    pub data_dropped: u64,
-    // Number of wrong packets sent and shortcutted
-    pub faulty_packets_sent: u64,
-    // Number of unpermitted actions executed
-    pub fouls: u64,
-    // Value is the n of packets & data sent to each neighbour
-    pub neighbours: HashMap<NodeId, (Packets, Bytes)>,
-    // Average added delay expressed in ms
-    pub latency: u64,
+pub fn initialize_info(mut commands: Commands) {
+    commands.insert_resource(DisplayedInfo {
+        drone: HashMap::default(),
+        client: HashMap::default(),
+        server: HashMap::default(),
+    });
 }
 
-#[allow(unused)]
-#[derive(Debug)]
-pub struct ClientData {
-    pub packets_sent: Packets,
-    // In bytes
-    pub data_received: Bytes,
-    // Number of pending and fullfilled requests
-    pub pending_requests: u32,
-    // Average number of bytes per message
-    pub avg_bytes_xmessage: u64,
-    // Number of unpermitted actions executed
-    pub fouls: u64,
-}
-
-#[allow(unused)]
-#[derive(Debug)]
-pub struct ServerData {
-    pub packets_sent: Packets,
-    // In bytes
-    pub data_sent: Bytes,
-    // Number of pending and fullfilled requests
-    pub pending_requests: u32,
-    pub fullfilled_requests: u64,
-    // Average number of bytes per message
-    pub avg_bytes_xmessage: u64,
-    // Number of unpermitted actions executed
-    pub fouls: u64,
-}
-
-#[derive(Debug, Resource)]
-pub struct DisplayedInfo {
-    pub drone: HashMap<NodeId, DroneData>,
-    pub client: HashMap<NodeId, ClientData>,
-    pub server: HashMap<NodeId, ServerData>,
-}
-
-pub struct EventListenerPlugin;
-
-impl Plugin for EventListenerPlugin {
-    fn build(&self, app: &mut App) {
-        app.insert_resource(DisplayedInfo {
-            drone: HashMap::default(),
-            client: HashMap::default(),
-            server: HashMap::default(),
-        });
-        app.add_systems(Update, listen_drones_events);
-        app.add_systems(Update, listen_leaves_events);
-    }
-}
-
-// TODO catch each packettype to log different messages depending on whats happening/wrong
-fn listen_drones_events(
+// TODO catch each packet type to log different messages depending on whats happening/wrong
+pub fn listen_drones_events(
     drone_listener: Res<DroneListener>,
     node_query: Query<&Node>,
     mut info: ResMut<DisplayedInfo>,
@@ -102,14 +43,14 @@ fn listen_drones_events(
                         neighbours: HashMap::default(),
                         latency: 0,
                     });
-                if let MsgFragment(fragment) = p.pack_type {
+                if let PacketType::MsgFragment(fragment) = p.pack_type {
                     entry.data_dropped += u64::from(fragment.length);
                 } else {
                     entry.fouls += 1;
                 }
             }
             DroneEvent::PacketSent(p) => {
-                if let FloodRequest(_) = p.pack_type {
+                if let PacketType::FloodRequest(_) = p.pack_type {
                     continue;
                 }
                 let entry = info
@@ -146,7 +87,7 @@ fn listen_drones_events(
                 };
                 // TODO: check for destination is drone
                 ////
-                if let MsgFragment(fragment) = p.pack_type {
+                if let PacketType::MsgFragment(fragment) = p.pack_type {
                     entry.data_sent += u64::from(fragment.length);
                     entry
                         .neighbours
@@ -169,7 +110,7 @@ fn listen_drones_events(
                         neighbours: HashMap::default(),
                         latency: 0,
                     });
-                if let MsgFragment(_) | FloodRequest(_) = p.pack_type {
+                if let PacketType::MsgFragment(_) | PacketType::FloodRequest(_) = p.pack_type {
                     entry.fouls += 1;
                 } else {
                     entry.packets_shortcutted += 1;
@@ -180,7 +121,7 @@ fn listen_drones_events(
     }
 }
 
-fn listen_leaves_events(
+pub fn listen_leaves_events(
     leaf_listener: Res<LeafListener>,
     leaf_query: Query<(&Node, &Leaf)>,
     mut info: ResMut<DisplayedInfo>,

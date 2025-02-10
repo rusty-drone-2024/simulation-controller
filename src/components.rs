@@ -38,17 +38,6 @@ pub struct SelectedMarker;
 pub struct CrashMarker;
 
 #[derive(Component)]
-pub struct NodeForceGraphMarker {
-    pub index: petgraph::stable_graph::NodeIndex<u8>,
-}
-
-#[derive(Component)]
-pub struct EdgeForceGraphMarker {
-    pub start_node: petgraph::stable_graph::NodeIndex<u8>,
-    pub end_node: petgraph::stable_graph::NodeIndex<u8>,
-}
-
-#[derive(Component)]
 pub struct SelectionSpriteMarker;
 
 #[derive(Component)]
@@ -80,22 +69,4 @@ impl Display for LeafType {
             LeafType::Server => write!(f, "Server"),
         }
     }
-}
-
-#[derive(Event)]
-pub struct AddDroneEvent {
-    pub pdr: f32,
-    pub ngbs: Vec<NodeId>,
-}
-
-#[derive(Event)]
-pub struct AddEdgeEvent {
-    pub start_node: NodeId,
-    pub end_node: NodeId,
-}
-
-#[derive(Event)]
-pub struct RmvEdgeEvent {
-    pub start_node: NodeId,
-    pub end_node: NodeId,
 }
