@@ -1,6 +1,7 @@
 use bevy::prelude::*;
 
 use common_structs::message::Message;
+use common_structs::types::Session;
 use std::collections::HashMap;
 use wg_2024::network::NodeId;
 
@@ -31,14 +32,10 @@ pub struct LeavesData {
     pub packets_sent: Packets,
     // In bytes
     pub data_sent: Bytes,
-    // Number of pending and fullfilled requests
-    pub pending_requests: u32,
-    // Average number of bytes per message
-    pub avg_bytes_xmessage: u64,
-    // Number of unpermitted actions executed
-    pub fouls: u64,
+    // Number of requests / responses
+    pub msg_n: u64,
     // Messages
-    pub messages: Vec<Message>,
+    pub messages: HashMap<Session, (Message, NodeId, bool)>,
 }
 
 #[derive(Debug, Resource)]

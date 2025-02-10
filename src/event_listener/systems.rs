@@ -29,10 +29,11 @@ pub fn listen_drones_events(
     while let Ok(event) = drone_listener.receiver.try_recv() {
         match event {
             DroneEvent::PacketDropped(p) => {
-                let entry = info
-                    .drone
-                    .entry(p.routing_header.hops[p.routing_header.hop_index - 1])
-                    .or_insert(DroneData {
+                if p.routing_header.hop_index > 0
+                    && (p.routing_header.hop_index as usize) <= p.routing_header.hops.len()
+                {
+                    let hop = p.routing_header.hops[p.routing_header.hop_index - 1];
+                    let entry = info.drone.entry(hop).or_insert(DroneData {
                         packets_sent: 0,
                         packets_shortcutted: 0,
                         data_sent: 0,
@@ -42,78 +43,93 @@ pub fn listen_drones_events(
                         neighbours: HashMap::default(),
                         latency: 0,
                     });
-                if let PacketType::MsgFragment(fragment) = p.pack_type {
-                    entry.data_dropped += u64::from(fragment.length);
+
+                    if let PacketType::MsgFragment(fragment) = p.pack_type {
+                        entry.data_dropped += u64::from(fragment.length);
+                    } else {
+                        entry.fouls += 1;
+                    }
                 } else {
-                    entry.fouls += 1;
+                    eprintln!("Invalid routing header: {:?}", p.routing_header);
                 }
             }
             DroneEvent::PacketSent(p) => {
                 if let PacketType::FloodRequest(_) = p.pack_type {
                     continue;
                 }
-                let entry = info
-                    .drone
-                    .entry(p.routing_header.hops[p.routing_header.hop_index - 1])
-                    .or_insert(DroneData {
-                        packets_sent: 0,
-                        packets_shortcutted: 0,
-                        data_sent: 0,
-                        data_dropped: 0,
-                        faulty_packets_sent: 0,
-                        fouls: 0,
-                        neighbours: HashMap::default(),
-                        latency: 0,
-                    });
-                entry.packets_sent += 1;
-                entry
-                    .neighbours
-                    .entry(p.routing_header.hops[p.routing_header.hop_index])
-                    .or_insert((0, 0))
-                    .0 += 1;
-
-                // Check for error in routing
-                if let Some(node) = node_query
-                    .iter()
-                    .find(|&node| node.id == p.routing_header.hops[p.routing_header.hop_index - 1])
+                if p.routing_header.hop_index > 0
+                    && (p.routing_header.hop_index as usize) <= p.routing_header.hops.len()
                 {
-                    if !node
-                        .neighbours
-                        .contains(&p.routing_header.hops[p.routing_header.hop_index])
-                    {
-                        entry.faulty_packets_sent += 1;
-                    }
-                };
-                // TODO: check for destination is drone
-                ////
-                if let PacketType::MsgFragment(fragment) = p.pack_type {
-                    entry.data_sent += u64::from(fragment.length);
+                    let entry = info
+                        .drone
+                        .entry(p.routing_header.hops[p.routing_header.hop_index - 1])
+                        .or_insert(DroneData {
+                            packets_sent: 0,
+                            packets_shortcutted: 0,
+                            data_sent: 0,
+                            data_dropped: 0,
+                            faulty_packets_sent: 0,
+                            fouls: 0,
+                            neighbours: HashMap::default(),
+                            latency: 0,
+                        });
+                    entry.packets_sent += 1;
                     entry
                         .neighbours
                         .entry(p.routing_header.hops[p.routing_header.hop_index])
                         .or_insert((0, 0))
-                        .1 += u64::from(fragment.length);
+                        .0 += 1;
+
+                    // Check for error in routing
+                    if let Some(node) = node_query.iter().find(|&node| {
+                        node.id == p.routing_header.hops[p.routing_header.hop_index - 1]
+                    }) {
+                        if !node
+                            .neighbours
+                            .contains(&p.routing_header.hops[p.routing_header.hop_index])
+                        {
+                            entry.faulty_packets_sent += 1;
+                        }
+                    };
+                    // TODO: check for destination is drone
+                    ////
+                    if let PacketType::MsgFragment(fragment) = p.pack_type {
+                        entry.data_sent += u64::from(fragment.length);
+                        entry
+                            .neighbours
+                            .entry(p.routing_header.hops[p.routing_header.hop_index])
+                            .or_insert((0, 0))
+                            .1 += u64::from(fragment.length);
+                    }
+                } else {
+                    eprintln!("Invalid routing header: {:?}", p.routing_header);
                 }
             }
             DroneEvent::ControllerShortcut(p) => {
-                let entry = info
-                    .drone
-                    .entry(p.routing_header.hops[p.routing_header.hop_index - 1])
-                    .or_insert(DroneData {
-                        packets_sent: 0,
-                        packets_shortcutted: 0,
-                        data_sent: 0,
-                        data_dropped: 0,
-                        faulty_packets_sent: 0,
-                        fouls: 0,
-                        neighbours: HashMap::default(),
-                        latency: 0,
-                    });
-                if let PacketType::MsgFragment(_) | PacketType::FloodRequest(_) = p.pack_type {
-                    entry.fouls += 1;
+                if p.routing_header.hop_index > 0
+                    && (p.routing_header.hop_index as usize) <= p.routing_header.hops.len()
+                {
+                    let entry = info
+                        .drone
+                        .entry(p.routing_header.hops[p.routing_header.hop_index - 1])
+                        .or_insert(DroneData {
+                            packets_sent: 0,
+                            packets_shortcutted: 0,
+                            data_sent: 0,
+                            data_dropped: 0,
+                            faulty_packets_sent: 0,
+                            fouls: 0,
+                            neighbours: HashMap::default(),
+                            latency: 0,
+                        });
+                    if let PacketType::MsgFragment(_) | PacketType::FloodRequest(_) = p.pack_type {
+                        entry.fouls += 1;
+                    } else {
+                        entry.packets_shortcutted += 1;
+                        shortcut(&node_query, &p);
+                    }
                 } else {
-                    entry.packets_shortcutted += 1;
-                    shortcut(&node_query, &p);
+                    eprintln!("Invalid routing header: {:?}", p.routing_header);
                 }
             }
         }
@@ -128,51 +144,57 @@ pub fn listen_leaves_events(
     while let Ok(event) = leaf_listener.receiver.try_recv() {
         match event {
             LeafEvent::PacketSend(p) => {
-                let entry = info
-                    .leaf
-                    .entry(p.routing_header.hops[p.routing_header.hop_index - 1])
-                    .or_insert(LeavesData {
+                if p.routing_header.hop_index > 0
+                    && (p.routing_header.hop_index as usize) <= p.routing_header.hops.len()
+                {
+                    let hop = p.routing_header.hops[p.routing_header.hop_index - 1];
+                    let entry = info.leaf.entry(hop).or_insert(LeavesData {
                         packets_sent: 0,
                         data_sent: 0,
-                        pending_requests: 0,
-                        avg_bytes_xmessage: 0,
-                        fouls: 0,
-                        messages: Vec::new(),
+                        msg_n: 0,
+                        messages: HashMap::default(),
                     });
-                if let PacketType::MsgFragment(fragment) = p.pack_type {
-                    entry.data_sent += u64::from(fragment.length);
-                };
-            }
-            LeafEvent::ControllerShortcut(p) => {
-                let entry = info
-                    .leaf
-                    .entry(p.routing_header.hops[p.routing_header.hop_index - 1])
-                    .or_insert(LeavesData {
-                        packets_sent: 0,
-                        data_sent: 0,
-                        pending_requests: 0,
-                        avg_bytes_xmessage: 0,
-                        fouls: 0,
-                        messages: Vec::new(),
-                    });
-                if let PacketType::MsgFragment(_) | PacketType::FloodRequest(_) = p.pack_type {
-                    entry.fouls += 1;
+
+                    entry.packets_sent += 1;
+
+                    if let PacketType::MsgFragment(fragment) = p.pack_type {
+                        entry.data_sent += u64::from(fragment.length);
+                    }
                 } else {
-                    shortcut(&node_query, &p);
+                    eprintln!("Invalid routing header: {:?}", p.routing_header);
                 }
             }
-            LeafEvent::MessageStartSend(id, _session, m) => {
-                let entry = info.leaf.entry(id).or_insert(LeavesData {
+            LeafEvent::ControllerShortcut(p) => {
+                shortcut(&node_query, &p);
+            }
+            LeafEvent::MessageStartSend {
+                start,
+                session,
+                dest,
+                message: m,
+            } => {
+                let entry = info.leaf.entry(start).or_insert(LeavesData {
                     packets_sent: 0,
                     data_sent: 0,
-                    pending_requests: 0,
-                    avg_bytes_xmessage: 0,
-                    fouls: 0,
-                    messages: Vec::new(),
+                    msg_n: 0,
+                    messages: HashMap::default(),
                 });
-                entry.messages.push(m);
+                entry.messages.insert(session, (m, dest, false));
             }
-            _ => {}
+            LeafEvent::MessageFullySent(start, session) => {
+                let entry = info.leaf.entry(start).or_insert(LeavesData {
+                    packets_sent: 0,
+                    data_sent: 0,
+                    msg_n: 0,
+                    messages: HashMap::default(),
+                });
+                if let Some((_, _, ended)) = entry.messages.get_mut(&session) {
+                    if !*ended {
+                        *ended = true;
+                        entry.msg_n += 1;
+                    }
+                }
+            }
         }
     }
 }
@@ -194,4 +216,17 @@ fn shortcut(node_query: &Query<&Node>, packet: &Packet) {
     } else {
         println!("### SHORTCUT: failed to shortcut");
     }
+}
+
+fn get_drone_entry(info: &mut DisplayedInfo, id: u8) -> &mut DroneData {
+    info.drone.entry(id).or_insert(DroneData {
+        packets_sent: 0,
+        packets_shortcutted: 0,
+        data_sent: 0,
+        data_dropped: 0,
+        faulty_packets_sent: 0,
+        fouls: 0,
+        neighbours: HashMap::default(),
+        latency: 0,
+    })
 }

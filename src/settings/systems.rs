@@ -94,9 +94,7 @@ pub fn reset_infos(mut reader: EventReader<ResetInfosEvent>, mut info: ResMut<Di
         for data in info.leaf.values_mut() {
             data.packets_sent = 0;
             data.data_sent = 0;
-            data.pending_requests = 0;
-            data.avg_bytes_xmessage = 0;
-            data.fouls = 0;
+            data.msg_n = 0;
             data.messages.clear();
         }
     }

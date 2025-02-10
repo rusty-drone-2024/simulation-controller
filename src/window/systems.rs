@@ -1,4 +1,4 @@
-use std::cmp::{max, min};
+use std::cmp::min;
 
 use super::resources::{MainUiState, SelectedUiState};
 use crate::components::{
@@ -8,7 +8,7 @@ use crate::components::{
 };
 use crate::event_listener::DisplayedInfo;
 use crate::events::{AddDroneEvent, AddEdgeEvent, RmvEdgeEvent};
-use bevy::prelude::*;
+use bevy::{log::tracing_subscriber::field::display::Messages, prelude::*};
 use bevy_egui::{egui, EguiContexts};
 
 pub fn initialize_ui_state(mut commands: Commands) {
@@ -414,33 +414,24 @@ pub fn window(
                                     ui.horizontal(|ui| {
                                         ui.add_space(6.0);
                                         ui.label(format!(
-                                            "Pending requests: {:?}",
+                                            "Requests sent: {:?}",
                                             info.leaf
                                                 .get(&node.id)
                                                 .is_some()
-                                                .then(|| { info.leaf[&node.id].pending_requests })
+                                                .then(|| { info.leaf[&node.id].msg_n })
                                                 .unwrap_or(0)
                                         ));
                                         ui.add_space(20.0);
-                                        ui.label(format!(
-                                            "Avg bytes x message: {:?}",
-                                            info.leaf
-                                                .get(&node.id)
-                                                .is_some()
-                                                .then(|| { info.leaf[&node.id].avg_bytes_xmessage })
-                                                .unwrap_or(0)
-                                        ));
-                                    });
-                                    ui.horizontal(|ui| {
-                                        ui.add_space(6.0);
-                                        ui.label(format!(
-                                            "Number of fouls: {:?}",
-                                            info.leaf
-                                                .get(&node.id)
-                                                .is_some()
-                                                .then(|| { info.leaf[&node.id].fouls })
-                                                .unwrap_or(0)
-                                        ));
+                                        let bytes = info.leaf[&node.id].data_sent;
+                                        let msg_n = info.leaf[&node.id].msg_n;
+                                        if bytes == 0 || msg_n == 0 {
+                                            ui.label("Average bytes per message: -");
+                                        } else {
+                                            ui.label(format!(
+                                                "Average bytes per message: {:?}",
+                                                bytes / msg_n
+                                            ));
+                                        }
                                     });
                                     ui.separator();
                                     ui.heading("Last messages:");
@@ -448,36 +439,32 @@ pub fn window(
                                         .max_height(600.0)
                                         .auto_shrink([false; 2])
                                         .show(ui, |ui| {
-                                            let mut len = info
-                                                .leaf
-                                                .get(&node.id)
-                                                .is_some()
-                                                .then(|| info.leaf[&node.id].messages.len())
-                                                .unwrap_or(0);
-                                            len = min(5, len);
+                                            let len = min(
+                                                10,
+                                                info.leaf
+                                                    .get(&node.id)
+                                                    .is_some()
+                                                    .then(|| info.leaf[&node.id].messages.len())
+                                                    .unwrap_or(0),
+                                            );
                                             for i in 0..len {
                                                 ui.horizontal(|ui| {
                                                     ui.set_width(500.0);
                                                     ui.horizontal(|ui| {
-                                                        ui.label(format!(
-                                                            "{:?}",
-                                                            info.leaf
-                                                                .get(&node.id)
-                                                                .is_some()
-                                                                .then(|| {
-                                                                    info.leaf[&node.id].messages
-                                                                        [info.leaf[&node.id]
-                                                                            .messages
-                                                                            .len()
-                                                                            - i
-                                                                            - 1]
-                                                                    .clone()
-                                                                })
-                                                                .unwrap()
-                                                        ));
-                                                        if ui.button(format!("Show")).clicked() {
-                                                            println!("Show info");
+                                                        let info = info.leaf[&node.id]
+                                                            .messages
+                                                            .values()
+                                                            .nth(i)
+                                                            .unwrap();
+                                                        if info.2 {
+                                                            ui.label("Sent: ");
+                                                        } else {
+                                                            ui.label("Sending: ");
                                                         }
+                                                        ui.add_space(20.0);
+                                                        ui.label(format!("{:?}", info.0));
+                                                        ui.add_space(20.0);
+                                                        ui.label(format!("To: {:?}", info.1));
                                                     })
                                                 });
                                             }
