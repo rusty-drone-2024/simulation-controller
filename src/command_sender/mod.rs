@@ -1,3 +1,5 @@
+/// This module contains the command sender plugin.
+/// The command sender plugin is responsible for sending commands to the drones and leaves.
 mod components;
 pub mod sender_trait;
 mod systems;

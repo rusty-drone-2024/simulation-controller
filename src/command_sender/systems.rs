@@ -71,7 +71,7 @@ pub fn crash(
                 }
             }
         }
-        //Despawning the drone related entities
+        //Despawning the drone and its related entities
         commands.entity(entity).despawn();
         for mut visibility in &mut selected_sprite_query {
             *visibility = Visibility::Hidden;

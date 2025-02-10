@@ -1,3 +1,5 @@
+/// This module contains the small settings systems
+/// This simple module just handles the small settings window of the simulation.
 mod events;
 mod resources;
 mod systems;

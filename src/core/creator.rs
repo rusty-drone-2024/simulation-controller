@@ -73,7 +73,7 @@ pub fn spawn_leaf(
     } else {
         path = "server.png";
         leaf_type = LeafType::Server;
-        color = Color::srgb(0.0, 0.0, 0.2);
+        color = Color::srgb(0.1, 0.1, 0.4);
     }
     let entity_id = commands
         .spawn((

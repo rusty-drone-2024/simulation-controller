@@ -1,6 +1,6 @@
 # force-graph-rs
 
-#### Note: That this is a clone of the original repository modified to suite the needs of the simulation-controller project.
+#### Note: That this is a fork of the original repository modified to suite the needs of the AP project.
 
 ## Original repository:
 [![Crates.io](https://img.shields.io/crates/v/force_graph.svg)](https://crates.io/crates/force_graph)

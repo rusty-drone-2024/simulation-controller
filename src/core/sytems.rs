@@ -49,7 +49,7 @@ pub fn add_drone(
                 if node.id == *ngb_id {
                     if let Some(leaf) = leaf {
                         if leaf.leaf_type == LeafType::Client && node.neighbours.len() > 1 {
-                            println!("Client should be connected to at most 2 drones");
+                            eprintln!("Client should be connected to at most 2 drones");
                             return;
                         }
                     }
@@ -59,7 +59,7 @@ pub fn add_drone(
         }
         if !(node_info.contains_key(&add_node.ngbs[0]) && node_info.contains_key(&add_node.ngbs[1]))
         {
-            println!("Nodes not present");
+            eprintln!("Nodes not present");
             return;
         }
         let mut all_ids: Vec<NodeId> = nodes.iter().map(|(node, _, _)| node.id).collect();
@@ -90,7 +90,7 @@ pub fn add_drone(
                 Vec3::new(-200.0, 0.0, 0.0),
             );
         } else {
-            println!("Wrong NI behaviour");
+            eprintln!("Wrong NI behaviour");
             return;
         }
         for (mut node, _leaf, mut sender) in &mut nodes {
@@ -103,7 +103,7 @@ pub fn add_drone(
                         node.neighbours.insert(node_id);
                         spawn_edge(&mut commands, node_id, *ngb_id, &mut meshes, &mut materials);
                     } else {
-                        println!("Error adding sender");
+                        eprintln!("Error adding sender");
                         return;
                     }
                 }
@@ -124,14 +124,14 @@ pub fn add_edge(
 ) {
     for edge in er_add_edge.read() {
         if edge.start_node == edge.end_node {
-            println!("Can't connect a node to itself");
+            eprintln!("Can't connect a node to itself");
             return;
         }
         if edges.iter().any(|e| {
             (e.start_node == edge.start_node && e.end_node == edge.end_node)
                 || (e.start_node == edge.end_node && e.end_node == edge.start_node)
         }) {
-            println!("Edge already exists");
+            eprintln!("Edge already exists");
             return;
         }
         let mut node_info: HashMap<NodeId, Sender<Packet>> = HashMap::new();
@@ -144,14 +144,14 @@ pub fn add_edge(
                 node_info.insert(node.id, node.packet_channel.clone());
                 if let Some(leaf) = leaf {
                     if leaf.leaf_type == LeafType::Client && node.neighbours.len() > 1 {
-                        println!("Client should be connected to at most 2 drones");
+                        eprintln!("Client should be connected to at most 2 drones");
                         return;
                     }
                 }
             }
         }
         if !(node_info.contains_key(&edge.start_node) && node_info.contains_key(&edge.end_node)) {
-            println!("Can't connect nodes if either of them is not present");
+            eprintln!("Can't connect nodes if either of them is not present");
             return;
         }
         let mut inserted = (false, false);
@@ -168,7 +168,7 @@ pub fn add_edge(
                     node.neighbours.insert(edge.end_node);
                     inserted.0 = true;
                 } else {
-                    println!("Error adding sender for node {}", edge.start_node);
+                    eprintln!("Error adding sender for node {}", edge.start_node);
                     return;
                 }
             }
@@ -183,7 +183,7 @@ pub fn add_edge(
                     node.neighbours.insert(edge.start_node);
                     inserted.1 = true;
                 } else {
-                    println!("Error adding sender for node {}", edge.end_node);
+                    eprintln!("Error adding sender for node {}", edge.end_node);
                     return;
                 }
             }
@@ -200,8 +200,9 @@ pub fn add_edge(
                 &mut meshes,
                 &mut materials,
             );
+            println!("Edge added successfully");
         } else {
-            println!("Error processing one or both nodes.");
+            eprintln!("Error processing one or both nodes.");
         }
     }
 }
@@ -215,7 +216,7 @@ pub fn remove_edge(
 ) {
     for rmv_edge in er_add_edge.read() {
         if rmv_edge.start_node == rmv_edge.end_node {
-            println!("Can't remove self edge");
+            eprintln!("Can't remove self edge");
             return;
         }
         let mut topology: HashMap<NodeId, HashSet<NodeId>> = HashMap::new();
@@ -226,7 +227,7 @@ pub fn remove_edge(
                     continue;
                 }
                 if leaf.leaf_type == LeafType::Server && node.neighbours.len() <= 2 {
-                    println!("Server should always have at least 2 connections");
+                    eprintln!("Server should always have at least 2 connections");
                     return;
                 }
             } else {
@@ -236,7 +237,7 @@ pub fn remove_edge(
         if !(topology.contains_key(&rmv_edge.start_node)
             && topology.contains_key(&rmv_edge.end_node))
         {
-            println!("Can't remove edge if either of the nodes is not present");
+            eprintln!("Can't remove edge if either of the nodes is not present");
             return;
         }
         if !is_connected(
@@ -244,7 +245,7 @@ pub fn remove_edge(
             None,
             Some((rmv_edge.start_node, rmv_edge.end_node)),
         ) {
-            println!("Removing this edge will disconnect the network...aborting");
+            eprintln!("Removing this edge will disconnect the network...aborting");
             return;
         }
         let mut removed = (false, false);
@@ -254,7 +255,7 @@ pub fn remove_edge(
                     node.neighbours.remove(&rmv_edge.end_node);
                     removed.0 = true;
                 } else {
-                    println!("Error removing sender for node {}", rmv_edge.start_node);
+                    eprintln!("Error removing sender for node {}", rmv_edge.start_node);
                     return;
                 }
             }
@@ -263,7 +264,7 @@ pub fn remove_edge(
                     node.neighbours.remove(&rmv_edge.start_node);
                     removed.1 = true;
                 } else {
-                    println!("Error removing sender for node {}", rmv_edge.end_node);
+                    eprintln!("Error removing sender for node {}", rmv_edge.end_node);
                     return;
                 }
             }

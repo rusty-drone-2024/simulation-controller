@@ -191,6 +191,6 @@ fn shortcut(node_query: &Query<&Node>, packet: &Packet) {
             node.id, packet
         );
     } else {
-        println!("### SHORTCUT: failed to shortcut");
+        eprintln!("### SHORTCUT: failed to shortcut");
     }
 }

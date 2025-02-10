@@ -12,7 +12,7 @@ pub struct SpawnTopologyPlugin;
 impl Plugin for SpawnTopologyPlugin {
     fn build(&self, app: &mut App) {
         app.add_systems(PreStartup, initialize_sc)
-            .add_systems(PreStartup, initialize_items);
+            .add_systems(PreStartup, initialize_selector);
     }
 }
 
@@ -99,7 +99,7 @@ fn initialize_sc(
     }
 }
 
-fn initialize_items(mut commands: Commands, asset_server: Res<AssetServer>) {
+fn initialize_selector(mut commands: Commands, asset_server: Res<AssetServer>) {
     commands.spawn((
         Sprite {
             image: asset_server.load("selected.png"),

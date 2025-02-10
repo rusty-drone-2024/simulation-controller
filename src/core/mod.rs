@@ -1,3 +1,7 @@
+/// This module is the core of the simulation controller.
+/// It contains the main plugins that are used to spawn cameras, entities etc.
+/// It also contains the main systems that are used to perform actions on the topology.
+///
 mod camera;
 use camera::CameraPlugin;
 
