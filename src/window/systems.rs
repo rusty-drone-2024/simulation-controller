@@ -271,11 +271,13 @@ pub fn window(
                                 });
                                 ui.horizontal(|ui| {
                                     ui.add_space(6.0);
-                                    let usage_percentage =
-                                        info.drone[&node.id].neighbour_usage_percentages();
-                                    for (id, percentage) in usage_percentage {
-                                        ui.add_space(2.0);
-                                        ui.label(format!("[{id}] {percentage}%"));
+                                    if let Some(drone) = info.drone.get(&node.id) {
+                                        let usage_percentage
+                                        = drone.neighbour_usage_percentages();
+                                        for (id, percentage) in usage_percentage {
+                                            ui.add_space(2.0);
+                                            ui.label(format!("[{id}] {percentage}%"));
+                                        }
                                     }
                                 });
                                 ui.add_space(10.0);
