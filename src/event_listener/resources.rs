@@ -42,7 +42,7 @@ impl AddAssign<u64> for Bytes {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct DroneData {
     // Number of packets sent and shortcutted are disjoint
     pub packets_sent: Packets,
@@ -51,13 +51,29 @@ pub struct DroneData {
     pub data_sent: Bytes,
     pub data_dropped: Bytes,
     // Value is the n of packets & data sent to each neighbour
-    pub neighbours: HashMap<NodeId, (Packets, Bytes)>,
-    // Average added delay expressed in ms
-    pub latency: u64,
+    pub neighbours: HashMap<NodeId, Bytes>,
+}
+
+impl DroneData {
+    pub fn neighbour_usage_percentages(&self) -> Vec<(NodeId, u32)> {
+        let total_bytes_sent = self.data_sent.clone();
+
+        if total_bytes_sent == Bytes(0) {
+            return self.neighbours.keys().map(|&id| (id, 0)).collect();
+        }
+
+        let mut percentages: Vec<(NodeId, u32)> = self.neighbours.iter().map(|(&node_id, &ref bytes)| {
+            let percentage = ((bytes.0 as f64 / total_bytes_sent.0 as f64) * 100.0).clamp(1.0, 100.0).round() as u32;
+            (node_id, percentage)
+        }).collect();
+
+        percentages.sort_by(|a, b| b.1.cmp(&a.1));
+        percentages
+    }
 }
 
 #[allow(unused)]
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct LeavesData {
     pub packets_sent: Packets,
     // In bytes

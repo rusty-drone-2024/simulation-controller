@@ -93,7 +93,9 @@ pub fn update_nodes(
     time: Res<Time>,
     mut nodes: Query<(&mut Transform, &NodeForceGraphMarker), With<Node>>,
 ) {
-    force_graph.data.update(time.delta_secs());
+    let mut delta_sec = time.delta_secs();
+    delta_sec = delta_sec.clamp(0.0, 0.1);
+    force_graph.data.update(delta_sec);
     for (mut transform, petgraph) in &mut nodes {
         if force_graph.data.contains_node(petgraph.index) {
             let (x, y) = force_graph.data.get_node_position(petgraph.index);

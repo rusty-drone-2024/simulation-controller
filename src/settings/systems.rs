@@ -87,7 +87,6 @@ pub fn reset_infos(mut reader: EventReader<ResetInfosEvent>, mut info: ResMut<Di
             data.data_sent = Bytes(0);
             data.data_dropped = Bytes(0);
             data.neighbours.clear();
-            data.latency = 0;
         }
         for data in info.leaf.values_mut() {
             data.packets_sent = 0;

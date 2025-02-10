@@ -4,7 +4,6 @@ use crate::{
 };
 use bevy::prelude::*;
 
-// TODO MAYBE HAVE SAME PARAMETERS AND STRUC TFOR BOTH LEAVES TOGHHETER THEN CHANGE DYSPLAY IN UI
 use super::resources::{Bytes, DisplayedInfo, DroneData, LeavesData};
 use common_structs::leaf::LeafEvent;
 use std::collections::HashMap;
@@ -20,7 +19,6 @@ pub fn initialize_info(mut commands: Commands) {
     });
 }
 
-// TODO catch each packet type to log different messages depending on whats happening/wrong
 pub fn listen_drones_events(
     drone_listener: Res<DroneListener>,
     node_query: Query<&Node>,
@@ -39,7 +37,6 @@ pub fn listen_drones_events(
                         data_sent: Bytes(0),
                         data_dropped: Bytes(0),
                         neighbours: HashMap::default(),
-                        latency: 0,
                     });
 
                     if let PacketType::MsgFragment(fragment) = p.pack_type {
@@ -65,21 +62,15 @@ pub fn listen_drones_events(
                             data_sent: Bytes(0),
                             data_dropped: Bytes(0),
                             neighbours: HashMap::default(),
-                            latency: 0,
                         });
                     entry.packets_sent += 1;
-                    entry
-                        .neighbours
-                        .entry(p.routing_header.hops[p.routing_header.hop_index])
-                        .or_insert((0, Bytes(0)))
-                        .0 += 1;
                     if let PacketType::MsgFragment(fragment) = p.pack_type {
                         entry.data_sent += u64::from(fragment.length);
                         entry
                             .neighbours
                             .entry(p.routing_header.hops[p.routing_header.hop_index])
-                            .or_insert((0, Bytes(0)))
-                            .1 += u64::from(fragment.length);
+                            .or_insert(Bytes(0))
+                            .0 += u64::from(fragment.length);
                     }
                 } else {
                     eprintln!("Invalid routing header: {:?}", p.routing_header);
@@ -98,7 +89,6 @@ pub fn listen_drones_events(
                             data_sent: Bytes(0),
                             data_dropped: Bytes(0),
                             neighbours: HashMap::default(),
-                            latency: 0,
                         });
                     entry.packets_shortcutted += 1;
                     shortcut(&node_query, &p);
