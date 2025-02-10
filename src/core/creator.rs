@@ -65,12 +65,15 @@ pub fn spawn_leaf(
 ) {
     let path: &str;
     let leaf_type: LeafType;
+    let color: Color;
     if client {
         path = "client.png";
         leaf_type = LeafType::Client;
+        color = Color::srgb(1.0, 0.6, 0.6);
     } else {
         path = "server.png";
         leaf_type = LeafType::Server;
+        color = Color::srgb(0.0, 0.0, 0.2);
     }
     let entity_id = commands
         .spawn((
@@ -86,7 +89,11 @@ pub fn spawn_leaf(
                     leaf_type,
                 },
             },
-            Sprite::from_image(asset_server.load(path)),
+            Sprite {
+                image: asset_server.load(path),
+                color,
+                ..Default::default()
+            },
             Transform {
                 translation,
                 scale: Vec3::new(0.6, 0.6, 0.6),
