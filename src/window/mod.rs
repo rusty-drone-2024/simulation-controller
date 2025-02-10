@@ -1,3 +1,7 @@
+/// This module contains the window plugin and its systems.
+/// The window plugin is responsible for showing all the info on the side panel.
+/// It's also responsible for triggering other events if the user clicks on the buttons entities etc.
+///
 mod resources;
 mod systems;
 

@@ -1,3 +1,5 @@
+/// This module contains the event listener system.
+/// The event listener system is responsible for listening events sent by nodes and storing them.
 pub mod resources;
 mod systems;
 

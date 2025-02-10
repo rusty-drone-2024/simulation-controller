@@ -249,7 +249,7 @@ pub fn window(
                                 ui.horizontal(|ui| {
                                     ui.add_space(6.0);
                                     ui.label(format!(
-                                        "Data sent: {:?}",
+                                        "Data sent: {}",
                                         info.drone
                                             .contains_key(&node.id)
                                             .then(|| { info.drone[&node.id].data_sent.clone() })
@@ -257,22 +257,26 @@ pub fn window(
                                     ));
                                     ui.add_space(86.0);
                                     ui.label(format!(
-                                        "Data dropped: {:?}",
+                                        "Data dropped: {}",
                                         info.drone
                                             .contains_key(&node.id)
                                             .then(|| { info.drone[&node.id].data_dropped.clone() })
                                             .unwrap_or(Bytes(0))
                                     ));
                                 });
+                                ui.separator();
                                 ui.horizontal(|ui| {
                                     ui.add_space(6.0);
-                                    ui.label(format!(
-                                        "Latency: {:?} ms",
-                                        info.drone
-                                            .contains_key(&node.id)
-                                            .then(|| { info.drone[&node.id].latency })
-                                            .unwrap_or(0)
-                                    ));
+                                    ui.label("Neighbour usage percentages:");
+                                });
+                                ui.horizontal(|ui| {
+                                    ui.add_space(6.0);
+                                    let usage_percentage =
+                                        info.drone[&node.id].neighbour_usage_percentages();
+                                    for (id, percentage) in usage_percentage {
+                                        ui.add_space(2.0);
+                                        ui.label(format!("[{id}] {percentage}%"));
+                                    }
                                 });
                                 ui.add_space(10.0);
                                 // Drone info end
@@ -377,7 +381,7 @@ pub fn window(
                                         ));
                                         ui.add_space(20.0);
                                         ui.label(format!(
-                                            "Data sent: {:?}",
+                                            "Data sent: {}",
                                             info.leaf
                                                 .contains_key(&node.id)
                                                 .then(|| { info.leaf[&node.id].data_sent.clone() })
@@ -399,7 +403,7 @@ pub fn window(
                                             ui.label("Average data per message: -");
                                         } else {
                                             ui.label(format!(
-                                                "Average data per message: {:?}",
+                                                "Average data per message: {}",
                                                 bytes.clone() / msg_n
                                             ));
                                         }
@@ -472,7 +476,7 @@ pub fn window(
                                         ));
                                         ui.add_space(20.0);
                                         ui.label(format!(
-                                            "Data sent: {:?}",
+                                            "Data sent: {}",
                                             info.leaf
                                                 .contains_key(&node.id)
                                                 .then(|| { info.leaf[&node.id].data_sent.clone() })
@@ -494,7 +498,7 @@ pub fn window(
                                             ui.label("Average data per message: -");
                                         } else {
                                             ui.label(format!(
-                                                "Average data per message: {:?}",
+                                                "Average data per message: {}",
                                                 bytes.clone() / msg_n
                                             ));
                                         }

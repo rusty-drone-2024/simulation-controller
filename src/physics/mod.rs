@@ -1,3 +1,6 @@
+/// This module contains all the systems that are used to update the physics
+/// This module relys on the force graph implementation, check that folder for more infos.
+///
 mod components;
 mod resources;
 mod systems;
