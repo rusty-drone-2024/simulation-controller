@@ -1,5 +1,5 @@
-use crate::ui::components::{Drone, DroneBundle, Edge, Leaf, LeafBundle, LeafType, Node, Text};
-use crate::ui::on_click::{observer_drone, observer_leaf};
+use crate::core::components::{Drone, DroneBundle, Edge, Leaf, LeafBundle, LeafType, Node, Text};
+use crate::window::{observer_drone, observer_leaf};
 use bevy::prelude::*;
 use network_initializer::network::{DroneInfo, LeafInfo, NodeInfo};
 use wg_2024::network::NodeId;

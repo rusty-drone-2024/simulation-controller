@@ -1,6 +1,6 @@
 use bevy::prelude::*;
 
-use crate::ui::components::{Drone, Leaf};
+use crate::core::components::{Drone, Leaf};
 use bevy_trait_query::RegisterExt;
 use common_structs::leaf::LeafCommand;
 use crossbeam_channel::Sender;

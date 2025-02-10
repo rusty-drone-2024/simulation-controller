@@ -1,10 +1,10 @@
-use crate::ui::commands::utils::{is_connected, CommandSender};
-use crate::ui::components::{
+use crate::core::commands::utils::{is_connected, CommandSender};
+use crate::core::components::{
     AddDroneEvent, AddEdgeEvent, Edge, Leaf, LeafType, Node, RmvEdgeEvent,
 };
-use crate::ui::creator::spawn_drone;
-use crate::ui::resources::Senders;
-use crate::ui::settings::ModeConfig;
+use crate::core::creator::spawn_drone;
+use crate::core::resources::Senders;
+use crate::settings::ModeConfig;
 use bevy::prelude::*;
 use bevy_trait_query::One;
 use crossbeam_channel::Sender;

@@ -1,8 +1,8 @@
 use super::components::{Edge, Node, SelectionSpriteMarker};
 use super::creator::{spawn_drone, spawn_leaf};
-use crate::ui::resources::NetworkResource;
-use crate::ui::resources::{DroneListener, LeafListener, Senders};
-use crate::ui::settings::MusicResource;
+use crate::core::resources::NetworkResource;
+use crate::core::resources::{DroneListener, LeafListener, Senders};
+use crate::settings::MusicResource;
 use bevy::prelude::*;
 use network_initializer::network::TypeInfo;
 use rand::Rng;

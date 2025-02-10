@@ -1,5 +1,5 @@
-use crate::ui::components::{LeafType, Node};
-use crate::ui::resources::{DroneListener, LeafListener};
+use crate::core::components::{LeafType, Node};
+use crate::core::resources::{DroneListener, LeafListener};
 use bevy::prelude::*;
 
 use bevy::utils::HashMap;

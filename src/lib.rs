@@ -2,23 +2,27 @@
 #![allow(clippy::needless_pass_by_value)]
 #![allow(clippy::type_complexity)]
 #![allow(clippy::too_many_arguments)]
+
+mod core;
+mod physics;
+use physics::PhysicsPlugin;
+mod settings;
+use settings::SettingsPlugin;
+mod window;
+use window::WindowPlugin;
+
+
 use bevy::prelude::*;
 use bevy_egui::EguiPlugin;
-mod ui;
-
 use network_initializer::network::Network;
-
-use ui::camera::CameraPlugin;
-use ui::commands::CommandsPlugin;
-use ui::drone_system::DronePlugin;
-use ui::event_listener::EventListenerPlugin;
-use ui::graph_physics::PhysicsPlugin;
-use ui::initializer::SpawnTopologyPlugin;
-use ui::res_init::InitResourcesPlugin;
-use ui::resources::NetworkResource;
-use ui::settings::SettingsPlugin;
-use ui::utils::UtilsPlugins;
-use ui::window::WindowPlugin;
+use core::camera::CameraPlugin;
+use core::commands::CommandsPlugin;
+use core::drone_system::DronePlugin;
+use core::event_listener::EventListenerPlugin;
+use core::initializer::SpawnTopologyPlugin;
+use core::res_init::InitResourcesPlugin;
+use core::resources::NetworkResource;
+use core::utils::UtilsPlugins;
 
 pub fn loop_forever_sc(network: Network) {
     App::new()

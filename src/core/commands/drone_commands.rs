@@ -1,8 +1,8 @@
-use crate::ui::commands::utils::{is_connected, CommandSender};
-use crate::ui::components::{
+use crate::core::commands::utils::{is_connected, CommandSender};
+use crate::core::components::{
     CrashMarker, Drone, Edge, Leaf, LeafType, Node, SelectedMarker, SelectionSpriteMarker, Text,
 };
-use crate::ui::settings::ModeConfig;
+use crate::settings::ModeConfig;
 use bevy::prelude::*;
 use bevy_trait_query::One;
 use std::collections::{HashMap, HashSet};
