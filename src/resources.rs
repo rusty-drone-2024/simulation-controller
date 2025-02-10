@@ -22,6 +22,6 @@ pub struct Senders {
 }
 
 #[derive(Resource)]
-pub struct NetworkResource {
+pub struct NResource {
     pub data: Network,
 }
