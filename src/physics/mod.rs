@@ -1,10 +1,12 @@
-mod systems;
 mod components;
 mod resources;
+mod systems;
 
 use bevy::prelude::*;
-use systems::{update_graph, remove_items, update_nodes, update_edges, update_text, update_selector};
 use resources::MyForceGraph;
+use systems::{
+    remove_items, update_edges, update_graph, update_nodes, update_selector, update_text,
+};
 
 pub struct PhysicsPlugin;
 

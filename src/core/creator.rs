@@ -1,4 +1,4 @@
-use crate::core::components::{Drone, DroneBundle, Edge, Leaf, LeafBundle, LeafType, Node, Text};
+use crate::components::{Drone, DroneBundle, Edge, Leaf, LeafBundle, LeafType, Node, Text};
 use crate::window::{observer_drone, observer_leaf};
 use bevy::prelude::*;
 use network_initializer::network::{DroneInfo, LeafInfo, NodeInfo};

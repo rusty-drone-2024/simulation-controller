@@ -1,8 +1,6 @@
-use super::components::{Edge, Node, SelectionSpriteMarker};
 use super::creator::{spawn_drone, spawn_leaf};
-use crate::core::resources::NetworkResource;
-use crate::core::resources::{DroneListener, LeafListener, Senders};
-use crate::settings::MusicResource;
+use crate::components::{Edge, SelectionSpriteMarker};
+use crate::resources::{DroneListener, LeafListener, NetworkResource, Senders};
 use bevy::prelude::*;
 use network_initializer::network::TypeInfo;
 use rand::Rng;
@@ -13,10 +11,8 @@ pub struct SpawnTopologyPlugin;
 
 impl Plugin for SpawnTopologyPlugin {
     fn build(&self, app: &mut App) {
-        app.add_systems(PreStartup, spawn_soundtrack)
-            .add_systems(PreStartup, initialize_sc)
-            .add_systems(PreStartup, initialize_items)
-            .add_systems(Update, update_edges);
+        app.add_systems(PreStartup, initialize_sc)
+            .add_systems(PreStartup, initialize_items);
     }
 }
 
@@ -118,51 +114,4 @@ fn initialize_items(mut commands: Commands, asset_server: Res<AssetServer>) {
         Visibility::Hidden,
         SelectionSpriteMarker,
     ));
-}
-
-fn spawn_soundtrack(
-    mut commands: Commands,
-    asset_server: Res<AssetServer>,
-    mut music: ResMut<MusicResource>,
-) {
-    let entity = commands
-        .spawn((
-            AudioPlayer::new(asset_server.load("soundtrack.mp3")),
-            PlaybackSettings {
-                mode: bevy::audio::PlaybackMode::Loop,
-                volume: bevy::audio::Volume::new(0.5),
-                ..Default::default()
-            },
-        ))
-        .id();
-    music.entity = Some(entity);
-}
-
-fn update_edges(
-    mut edge_query: Query<(&Edge, &mut Transform)>,
-    node_query: Query<(&Node, &Transform), Without<Edge>>,
-) {
-    for (edge, mut edge_transform) in &mut edge_query {
-        let start_node_transform = node_query
-            .iter()
-            .find(|(node, _)| node.id == edge.start_node)
-            .map(|(_, transform)| transform.translation);
-        let end_node_transform = node_query
-            .iter()
-            .find(|(node, _)| node.id == edge.end_node)
-            .map(|(_, transform)| transform.translation);
-
-        if let (Some(start_position), Some(end_position)) =
-            (start_node_transform, end_node_transform)
-        {
-            let midpoint = (start_position + end_position) / 2.0;
-            let direction = end_position - start_position;
-            let angle = direction.y.atan2(direction.x);
-            let distance = direction.length() - 40.0;
-
-            edge_transform.translation = midpoint;
-            edge_transform.rotation = Quat::from_rotation_z(angle);
-            edge_transform.scale = Vec3::new(distance, 1.0, 1.0);
-        }
-    }
 }

@@ -1,10 +1,26 @@
-pub mod camera;
-pub mod commands;
-pub mod components;
+mod camera;
+use camera::CameraPlugin;
+
 pub mod creator;
 pub mod drone_system;
-pub mod event_listener;
+use drone_system::DronePlugin;
 pub mod initializer;
-pub mod res_init;
-pub mod resources;
+use initializer::SpawnTopologyPlugin;
 pub mod utils;
+use utils::UtilsPlugins;
+
+use bevy::{prelude::*, winit::WinitSettings};
+
+pub struct CorePlugin;
+
+impl Plugin for CorePlugin {
+    fn build(&self, app: &mut App) {
+        app.insert_resource(WinitSettings::game())
+            .insert_resource(ClearColor(Color::srgb(0.4, 0.4, 0.8)))
+            .insert_resource(Time::<Fixed>::from_seconds(1.0))
+            .add_plugins(CameraPlugin)
+            .add_plugins(DronePlugin)
+            .add_plugins(SpawnTopologyPlugin)
+            .add_plugins(UtilsPlugins);
+    }
+}

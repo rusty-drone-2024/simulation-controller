@@ -1,7 +1,10 @@
+use super::{
+    components::{EdgeForceGraphMarker, NodeForceGraphMarker},
+    resources::MyForceGraph,
+};
+use crate::components::{Edge, Node, SelectedMarker, SelectionSpriteMarker, Text};
 use bevy::prelude::*;
 use force_graph::{EdgeData, NodeData};
-use crate::core::components::{Edge, Node, Text, SelectedMarker, SelectionSpriteMarker};
-use super::{components::{NodeForceGraphMarker, EdgeForceGraphMarker}, resources::MyForceGraph};
 
 pub fn update_graph(
     mut commands: Commands,

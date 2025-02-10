@@ -1,8 +1,8 @@
+use super::events::{ModeEvent, MusicEvent, ResetInfosEvent};
+use super::resources::{ModeConfig, MusicResource, StateResource};
+use crate::event_listener::DisplayedInfo;
 use bevy::prelude::*;
-use bevy_egui::{EguiContexts, egui};
-use super::resources::{MusicResource, StateResource, ModeConfig};
-use super::events::{MusicEvent, ModeEvent, ResetInfosEvent};
-use crate::core::event_listener::DisplayedInfo;
+use bevy_egui::{egui, EguiContexts};
 
 pub fn settings_window(
     mut contexts: EguiContexts,

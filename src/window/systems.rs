@@ -1,10 +1,11 @@
-use crate::core::components::{
-    AddDroneEvent, AddEdgeEvent, CrashMarker, Drone, Leaf,
-    LeafType::{Client, Server},
-    Node, RmvEdgeEvent, SelectedMarker,
-};
-use crate::core::event_listener::DisplayedInfo;
 use super::resources::{MainUiState, SelectedUiState};
+use crate::components::{
+    CrashMarker, Drone, Leaf,
+    LeafType::{Client, Server},
+    Node, SelectedMarker,
+};
+use crate::event_listener::DisplayedInfo;
+use crate::events::{AddDroneEvent, AddEdgeEvent, RmvEdgeEvent};
 use bevy::prelude::*;
 use bevy_egui::{egui, EguiContexts};
 
@@ -20,6 +21,7 @@ pub fn initialize_ui_state(mut commands: Commands) {
         node_to_rmv: Some(0.to_string()),
     });
 }
+
 pub fn observer_drone(
     trigger: Trigger<Pointer<Click>>,
     mut commands: Commands,

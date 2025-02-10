@@ -3,7 +3,7 @@ mod systems;
 
 use bevy::prelude::*;
 use systems::{initialize_ui_state, window};
-pub use systems::{observer_leaf, observer_drone};
+pub use systems::{observer_drone, observer_leaf};
 
 pub struct WindowPlugin;
 

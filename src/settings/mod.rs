@@ -1,12 +1,14 @@
 mod events;
-mod systems;
 mod resources;
-pub use resources::{MusicResource, ModeConfig};
+mod systems;
+pub use resources::{ModeConfig, MusicResource};
 
 use bevy::prelude::*;
 use events::{ModeEvent, MusicEvent, ResetInfosEvent};
 use resources::StateResource;
-use systems::{reset_infos, settings_window, spawn_soundtrack, update_soundtrack, update_unchecked};
+use systems::{
+    reset_infos, settings_window, spawn_soundtrack, update_soundtrack, update_unchecked,
+};
 pub struct SettingsPlugin;
 
 impl Plugin for SettingsPlugin {
