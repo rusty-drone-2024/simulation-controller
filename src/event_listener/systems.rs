@@ -146,6 +146,7 @@ pub fn listen_leaves_events(
             LeafEvent::ControllerShortcut(p) => {
                 //shortcut(&node_query, p);
             }
+            _ => {}
         }
     }
 }

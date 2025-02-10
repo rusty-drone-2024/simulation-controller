@@ -45,7 +45,7 @@ pub fn spawn_drone(
     commands.entity(entity_id).observe(observer_drone);
     commands.spawn((
         Text { entity_id },
-        Text2d(format!("Drone {node_id}")),
+        Text2d(format!("{}: {}", node_info.name_impl.clone(), node_id)),
         Transform {
             translation: Vec3::new(translation.x, translation.y + 15.0, 15.0),
             scale: TEXT_SCALE,
@@ -65,15 +65,12 @@ pub fn spawn_leaf(
 ) {
     let path: &str;
     let leaf_type: LeafType;
-    let str: &str;
     if client {
         path = "client.png";
         leaf_type = LeafType::Client;
-        str = "Client ";
     } else {
         path = "server.png";
         leaf_type = LeafType::Server;
-        str = "Server ";
     }
     let entity_id = commands
         .spawn((
@@ -106,7 +103,7 @@ pub fn spawn_leaf(
     commands.entity(entity_id).observe(observer_leaf);
     commands.spawn((
         Text { entity_id },
-        Text2d(format!("{str}{node_id}")),
+        Text2d(format!("{}: {}", node_info.name_impl.clone(), node_id)),
         Transform {
             translation: Vec3::new(translation.x, translation.y + 15.0, 15.0),
             scale: TEXT_SCALE,

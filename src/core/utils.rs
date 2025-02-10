@@ -2,6 +2,7 @@ use crate::command_sender::sender_trait::CommandSender;
 use crate::components::{Edge, Leaf, LeafType, Node};
 use crate::core::creator::spawn_drone;
 use crate::events::{AddDroneEvent, AddEdgeEvent, RmvEdgeEvent};
+use crate::resources::NetworkResource;
 use crate::resources::Senders;
 use crate::settings::ModeConfig;
 use bevy::prelude::*;
@@ -36,6 +37,7 @@ pub fn add_drone(
     sender: Res<Senders>,
     mut nodes: Query<(&mut Node, Option<&Leaf>, One<&mut dyn CommandSender>)>,
     mode: Res<ModeConfig>,
+    network: Res<NetworkResource>,
 ) {
     for add_node in er_add_drone.read() {
         let mut node_info: HashMap<NodeId, Sender<Packet>> = HashMap::new();
@@ -77,6 +79,7 @@ pub fn add_drone(
             add_node.pdr,
             sender.drone_sender.clone(),
             &node_info,
+            &network.data.drone_factories,
         );
         if let TypeInfo::Drone(drone_info) = &node_info.type_info {
             spawn_drone(
