@@ -48,7 +48,6 @@ pub struct Text {
 #[derive(Clone, Component)]
 pub struct Drone {
     pub command_channel: Sender<DroneCommand>,
-    pub group_name: String,
     pub pdr: f32,
 }
 
