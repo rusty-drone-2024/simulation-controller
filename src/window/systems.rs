@@ -272,8 +272,7 @@ pub fn window(
                                 ui.horizontal(|ui| {
                                     ui.add_space(6.0);
                                     if let Some(drone) = info.drone.get(&node.id) {
-                                        let usage_percentage
-                                        = drone.neighbour_usage_percentages();
+                                        let usage_percentage = drone.neighbour_usage_percentages();
                                         for (id, percentage) in usage_percentage {
                                             ui.add_space(2.0);
                                             ui.label(format!("[{id}] {percentage}%"));
