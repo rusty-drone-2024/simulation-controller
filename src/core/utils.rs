@@ -71,7 +71,5 @@ pub fn is_connected(
             }
         }
     }
-    println!("{:?}", visited);
-    println!("{:?}", nodes.keys().collect::<HashSet<_>>());
     visited.len() >= nodes.len()
 }
