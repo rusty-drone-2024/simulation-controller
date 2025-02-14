@@ -226,13 +226,15 @@ pub fn remove_edge(
                     topology.insert(node.id, node.neighbours.clone());
                     continue;
                 }
-                if leaf.leaf_type == LeafType::Server && node.neighbours.len() <= 2 {
+                if leaf.leaf_type == LeafType::Server
+                    && node.neighbours.len() <= 2
+                    && (node.id == rmv_edge.start_node || node.id == rmv_edge.end_node)
+                {
                     eprintln!("Server should always have at least 2 connections");
                     return;
                 }
-            } else {
-                topology.insert(node.id, node.neighbours.clone());
-            };
+            }
+            topology.insert(node.id, node.neighbours.clone());
         }
         if !(topology.contains_key(&rmv_edge.start_node)
             && topology.contains_key(&rmv_edge.end_node))

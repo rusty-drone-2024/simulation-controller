@@ -71,5 +71,5 @@ pub fn is_connected(
             }
         }
     }
-    visited.len() == nodes.len()
+    visited.len() >= nodes.len()
 }
